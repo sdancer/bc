@@ -4,19 +4,76 @@ x = open("blackcipher.aes", "rb").read()
 md = Cs(CS_ARCH_X86, CS_MODE_32)
 md.detail = True
 
-def is_integer(operator):
-    return operator.type == capstone.xcore.XCORE_OP_IMM
+TYPES = ["INVALID", "XCORE_OP_REG","XCORE_OP_IMM", "XCORE_OP_MEM"]
+def print_operands(i):
+    for op in i.operands:
+        print("type %s" % TYPES[op.type])
 
+def operator_desc(op):
+    return TYPES[op.type]
+
+def value_desc(value):
+    if type(value) == type(0):
+        return "%x" % value
+    if type(value) == type(""):
+        return value
+    return "unk: " + TYPES[op.type]
+
+#hate this (?)
+class RegOp:
+    type = capstone.xcore.XCORE_OP_REG
+    def __init__(self, ireg):
+        self.reg = ireg
+
+class IntOp:
+    type = capstone.xcore.XCORE_OP_IMM
+    def __init__(self, ival):
+        self.imm = ival
+
+def make_int(reg):
+    return IntOp(reg)
+
+def make_reg(reg):
+    return RegOp(reg)
+
+def is_int_value(value):
+    if type(value) == type(0):
+        return True
+    if value.type == capstone.xcore.XCORE_OP_IMM:
+        return True
+    return False
+
+def has_int_value(context, stack, operator):
+    value = fetch_contents(context, stack, operator)
+    return is_int_value(value)
+
+def get_int_value(context, stack, operator):
+    contents = fetch_contents(context, stack, operator)
+    if type(contents) == type(0):
+        return contents
+    if contents.type == capstone.xcore.XCORE_OP_IMM:
+        return contents.imm
+    raise "doesn't have an int value"
+
+# how to handle sub eax, eax ? here z3 might be good (?)
 def do_aritm(context, stack, operation, op1, op2):
-    #changes z/s/c flags?
-    val = operation(op1, op2)
-    if val == 0 and is_integer(val):
-        #set Z
-        pass
-    if val != 0 and is_integer(val):
-        #clear z
-        pass
-    put_contents(op1, val)
+    op1v = fetch_contents(context, stack, op1)
+    op2v = fetch_contents(context, stack, op2)
+    if not(is_int_value(op1v)):
+        print("do_aritm[]] operator 1: %s" % (operator_desc(op1),) )
+    if not(is_int_value(op2v)):
+        print("do_aritm[]] operator 2: %s" % (operator_desc(op2),) )
+    if is_int_value(op1v) and is_int_value(op2v):
+        print("computing arit")
+        #computable operations branch
+        val = operation(get_int_value(context, stack, op1), get_int_value(context, stack, op2))
+        #changes z/s/c flags?
+        if val == 0: #set Z
+            pass
+        if val != 0: #clear z
+            pass
+        put_contents(context, stack, op1, val)
+        return "skip"
     return None #maybe return a stop condition
 
 #operator to
@@ -26,28 +83,56 @@ def do_aritm(context, stack, operation, op1, op2):
 #   - stack slot (esp bassed)
 # - imm
 
+def stack_offset(context, stack, operator):
+    index = (
+            0 if operator.mem.index == 0
+                else
+                    get_int_value(context, stack, make_reg(operator.mem.index)) * operand.mem.scale
+            )
+    disp = 0 if operator.mem.disp == 0 else operator.mem.disp
+    offset = 0 if (index + disp) == 0 else int(index + disp)
+    return offset
+
 def fetch_contents(context, stack, operator):
     if operator.type == capstone.xcore.XCORE_OP_REG:
         return context[operator.reg]
     if operator.type == capstone.xcore.XCORE_OP_IMM:
         return operator.imm
     if operator.type == capstone.xcore.XCORE_OP_MEM:
-        if True:#memory is ESP, go to virtual stack
-            pass
-        return "unknown"
+        if is_valid_stack_ref(context, stack, operator):
+            offset = stack_offset(context, stack, operator)
+            current_stack_pos = context[capstone.x86.X86_REG_ESP]
+            print("stack[%u, %u] -> " % (current_stack_pos, offset))
+            return stack[current_stack_pos + offset]
+        raise "unknown should be a type"
     raise "fetch_contents type "+str(operator.type)+" not proccessed"
 
+def is_valid_stack_ref(context, stack, operator):
+    #for now ESP + REG * scale + disp
+    #another option is base + esp * 1 + disp (not handled yet)
+    valid = (operator.mem.segment == 0) #segment should be 0
+    valid &= operator.mem.base == capstone.x86.X86_REG_ESP #base should be esp
+    valid &= (operator.mem.index == 0) or has_int_value(context, stack, make_reg(operator.mem.index))
+    return valid
+
 #return some operations ?
+#operator <- what is a good name for this?
 def put_contents(context, stack, operator, value):
-    print(str(operator) + " <- " + str(value))
-    if operator.type == capstone.xcore.XCORE_OP_REG:
+    #print(str(operator) + " <- " + str(value))
+    print("put_contents[%s] <- %s" % (operator_desc(operator), str(value)))
+    if operator.type == capstone.x86.X86_OP_REG:
         context[operator.reg] = value
         return None
-    if operator.type == capstone.xcore.XCORE_OP_MEM:
-        if True:#memory is ESP, go to virtual stack
-            pass
-        raise "put_contents mem access"
+    if operator.type == capstone.x86.X86_OP_MEM:
+        if is_valid_stack_ref(context, stack, operator):
+            offset = stack_offset(context, stack, operator)
+            current_stack_pos = context[capstone.x86.X86_REG_ESP]
+            print("stack[%u, %u] <- " % (current_stack_pos, offset))
+            stack[current_stack_pos + offset] = value
+            return None
+
     raise "put_contents type "+str(operator.type)+" not proccessed"
+
 
 def tracestuff(memdata, address):
   count = 0
@@ -65,7 +150,7 @@ def tracestuff(memdata, address):
     capstone.x86.X86_REG_EDI: "initial_edi",
     capstone.x86.X86_REG_EBP: "initial_ebp",
     #named tuples or whatever?
-    capstone.x86.X86_REG_ESP: ("stack", initial_stack_pos, 0), #{initial, deviation}
+    capstone.x86.X86_REG_ESP: initial_stack_pos,
     "flags": "initial_flags" #gotta decompose in each flag
   }
   while count < 100:
@@ -86,10 +171,12 @@ def tracestuff(memdata, address):
     #
 
     if capstone.x86.X86_GRP_CALL in i.groups:
-        raise "end of the block, unknown jump"
+        #if constant, fork or follow?
+        raise "end of the block, unknown call"
         break
     if capstone.x86.X86_GRP_RET in i.groups:
-        raise "end of the block, unknown jump"
+        #if static, jump
+        raise "end of the block, unknown ret"
         break
     if capstone.x86.X86_GRP_JUMP in i.groups:
         skip = False
@@ -104,74 +191,111 @@ def tracestuff(memdata, address):
                 proccessed_i = "skip"
                 skip = True
         if not(skip): #lord free us from this if!
-            raise "end of the block, unknown jump"
-            break
+            # raise "end of the block, unknown jump"
+            # break
+            pass #will break for now
 
-
-    #someone send me the reply to this ? :P
-    #
     if i.mnemonic == "push":
+        #how does push [esp - 0x10] proc in intel ?
+        value = fetch_contents(context, stack, i.operands[0])
+
         #ESP = ESP - 4;
-		#SS:ESP = Source //push doubleword
-        #we need 2 operation here, esp + and push_content
-        if i.operands[0].type == 1: #reg type
-            stack.append(i.operands[0].reg) #can push more stuf ?
-            print(" <- " + str(context[i.operands[0].reg]))
-        elif i.operands[0].type == 2: #please give me some case selector (?)
-            #constant
-            stack.append(i.operands[0].imm)
-            print(" <- " + str(i.operands[0].imm))
-        else:
-            print("push type: "+str(i.operands[0].type))
-            raise "stack unknown value, handle with empty theory"
-            #no else, why python is like this? :P
+        context[capstone.x86.X86_REG_ESP] -= 4
+        current_stack_pos = context[capstone.x86.X86_REG_ESP]
+
+        stack[current_stack_pos] = value
+        proccessed_i = "skip"
 
     if i.mnemonic == "pushfd":
+        #gotta deduplicate code (?)
         #ESP = ESP - 4;
+        context[capstone.x86.X86_REG_ESP] -= 4
+
+        stack[context[capstone.x86.X86_REG_ESP]] = context["flags"]
         #SS:ESP = Source //push doubleword
-        stack.append(context["flags"])
         print(" <- " + str(context["flags"]))
+        proccessed_i = "skip"
 
     if i.mnemonic == "pop":
-        #ESP = ESP + 4;
-        from_stack = stack.pop()
-        print(" -> " + str(from_stack))
-        if i.operands[0].type == 1: #reg type
-            context[i.operands[0].reg] = from_stack
-        else:
-            raise "stack unknown value, handle with empty theory"
+        current_stack_pos = context[capstone.x86.X86_REG_ESP]
 
-    #gotta add pusha / popa
+        value = stack[current_stack_pos]
+        print(" -> " + str(value))
+
+        #ESP = ESP + 4;
+        context[capstone.x86.X86_REG_ESP] += 4
+
+        put_contents(context, stack, i.operands[0], value)
+
+        proccessed_i = "skip"
+
+    if i.mnemonic == "pushal":
+        context[capstone.x86.X86_REG_ESP] -= 4 * 8
+
+        #temp = esp_val
+        stack[context[capstone.x86.X86_REG_ESP]] = context[capstone.x86.X86_REG_EAX]
+        stack[context[capstone.x86.X86_REG_ESP]+4] = context[capstone.x86.X86_REG_ECX];
+        stack[context[capstone.x86.X86_REG_ESP]+8] = context[capstone.x86.X86_REG_EDX];
+        stack[context[capstone.x86.X86_REG_ESP]+12] = context[capstone.x86.X86_REG_EBX];
+        stack[context[capstone.x86.X86_REG_ESP]+16] = "crash_if_read, original esp + offset, from pushal"
+        stack[context[capstone.x86.X86_REG_ESP]+20] = context[capstone.x86.X86_REG_EBP];
+        stack[context[capstone.x86.X86_REG_ESP]+24] = context[capstone.x86.X86_REG_ESI];
+        stack[context[capstone.x86.X86_REG_ESP]+28] = context[capstone.x86.X86_REG_EDI];
+        proccessed_i = "skip"
+
+    if i.mnemonic == "popal":
+        context[capstone.x86.X86_REG_EAX] = stack[context[capstone.x86.X86_REG_ESP]]
+        context[capstone.x86.X86_REG_ECX] = stack[context[capstone.x86.X86_REG_ESP]+4];
+        context[capstone.x86.X86_REG_EDX] = stack[context[capstone.x86.X86_REG_ESP]+8];
+        context[capstone.x86.X86_REG_EBX] = stack[context[capstone.x86.X86_REG_ESP]+12];
+        #stack[context[capstone.x86.X86_REG_ESP]+16] = "crash_if_read, original esp + offset, from pushal"
+        #can this instruction be used to rebase the ESP ?
+        # life is hard!
+        context[capstone.x86.X86_REG_EBP] = stack[context[capstone.x86.X86_REG_ESP]+20];
+        context[capstone.x86.X86_REG_ESI] = stack[context[capstone.x86.X86_REG_ESP]+24];
+        context[capstone.x86.X86_REG_EDI] = stack[context[capstone.x86.X86_REG_ESP]+28];
+
+        context[capstone.x86.X86_REG_ESP] += 4 * 8
+
+        #temp = esp_val
+        proccessed_i = "skip"
 
     if i.mnemonic == "mov":
         #add a fetch in container function
         #add a put in container function
         value = fetch_contents(context, stack, i.operands[1])
         put_contents(context, stack, i.operands[0], value)
+        proccessed_i = "skip"
 
     if i.mnemonic == "xchg":
         value0 = fetch_contents(context, stack, i.operands[0])
         value1 = fetch_contents(context, stack, i.operands[1])
         put_contents(context, stack, i.operands[0], value1)
         put_contents(context, stack, i.operands[1], value0)
+        proccessed_i = "skip"
 
     #latter add a map for clearness
+    if i.mnemonic == "neg":
+        proccessed_i = do_aritm(context, stack, aritm_neg, i.operands[0], make_int(0))
+
     if i.mnemonic == "inc":
-        proccessed_i = do_aritm(context, stack, aritm_add, op1, {type: 2, imm: 1})
+        proccessed_i = do_aritm(context, stack, aritm_add, i.operands[0], make_int(1))
     if i.mnemonic == "dec":
-        proccessed_i = do_aritm(context, stack, aritm_sub, op1, {type: 2, imm: 1})
+        proccessed_i = do_aritm(context, stack, aritm_sub, i.operands[0], make_int(1))
     if i.mnemonic == "add":
-        proccessed_i = do_aritm(context, stack, aritm_add, op1, op2)
+        proccessed_i = do_aritm(context, stack, aritm_add, i.operands[0], i.operands[1])
     if i.mnemonic == "sub":
-        proccessed_i = do_aritm(context, stack, aritm_sub, op1, op2)
+        proccessed_i = do_aritm(context, stack, aritm_sub, i.operands[0], i.operands[1])
     if i.mnemonic == "or":
-        proccessed_i = do_aritm(context, stack, aritm_or, op1, op2)
+        proccessed_i = do_aritm(context, stack, aritm_or, i.operands[0], i.operands[1])
     if i.mnemonic == "xor":
-        proccessed_i = do_aritm(context, stack, aritm_xor, op1, op2)
+        proccessed_i = do_aritm(context, stack, aritm_xor, i.operands[0], i.operands[1])
     if i.mnemonic == "shr":
-        proccessed_i = do_aritm(context, stack, aritm_shr, op1, op2)
+        proccessed_i = do_aritm(context, stack, aritm_shr, i.operands[0], i.operands[1])
     if i.mnemonic == "shl":
-        proccessed_i = do_aritm(context, stack, aritm_shl, op1, op2)
+        proccessed_i = do_aritm(context, stack, aritm_shl, i.operands[0], i.operands[1])
+    if i.mnemonic == "and":
+        proccessed_i = do_aritm(context, stack, aritm_and, i.operands[0], i.operands[1])
 
     if i.mnemonic == "mul":
         #modifies 2 regs at same time
@@ -181,6 +305,7 @@ def tracestuff(memdata, address):
         pass
 
     if proccessed_i == None:
+        return (stack, context, stuff)
         proccessed_i = i
 
     #if don't need to skip it append to it
@@ -188,33 +313,35 @@ def tracestuff(memdata, address):
 
   return (stack, context, stuff)
 
-def aritm_add(a,b):
-    if is_integer(a) and is_integer(b):
-        return a + b
-    #else return an abstract operation with the operands
-    raise "unknown types in op"
-def aritm_sub(a,b):
-    if is_integer(a) and is_integer(b):
-        return a - b
-    raise "unknown types in op"
-def aritm_or(a,b):
-    if is_integer(a) and is_integer(b):
-        return a | b
-    raise "unknown types in op"
-def aritm_xor(a,b):
-    if is_integer(a) and is_integer(b):
-        return a ^ b
-    raise "unknown types in op"
-def aritm_shl(a,b):
-    if is_integer(a) and is_integer(b):
-        return a << b
-    raise "unknown types in op"
-def aritm_shr(a,b):
-    if is_integer(a) and is_integer(b):
-        return a | b
-    raise "unknown types in op"
+#would be nice to have the abstract operations on these too :(
+#but need to read more about functional python programing
 
-print(tracestuff(x, 0x1DBF71A))
+def aritm_add(a,b):
+    return a + b
+def aritm_sub(a,b):
+    return a - b
+def aritm_or(a,b):
+    return a | b
+def aritm_xor(a,b):
+    return a ^ b
+def aritm_shl(a,b):
+    return a << b
+def aritm_shr(a,b):
+    return a >> b
+def aritm_and(a,b):
+    return a & b
+def aritm_neg(a,b):
+    return 0 - a
+
+#what sparse container can use?
+(stack, context, stuff) = tracestuff(x, 0x1DBF71A)
+esp_diff = (1024 * 1024 - context[capstone.x86.X86_REG_ESP])
+print("esp diff: %x" % esp_diff)
+for i in range(0, int(esp_diff/4)):
+    print("%s" % (value_desc(stack[context[capstone.x86.X86_REG_ESP] + i * 4])))
+
+print(context)
+print(stuff)
 
 #want elixir bindings
 #these if/then/else fgs :(
