@@ -60,13 +60,13 @@ def do_aritm(context, stack, operation, op1, op2):
     op1v = fetch_contents(context, stack, op1)
     op2v = fetch_contents(context, stack, op2)
     if not(is_int_value(op1v)):
-        print("do_aritm[]] operator 1: %s" % (operator_desc(op1),) )
+        print("#do_aritm[]] operator 1: %s" % (operator_desc(op1),) )
     if not(is_int_value(op2v)):
-        print("do_aritm[]] operator 2: %s" % (operator_desc(op2),) )
+        print("#do_aritm[]] operator 2: %s" % (operator_desc(op2),) )
     if is_int_value(op1v) and is_int_value(op2v):
-        print("computing arit")
         #computable operations branch
         val = operation(get_int_value(context, stack, op1), get_int_value(context, stack, op2))
+        val &= 0xffffffff
         #changes z/s/c flags?
         if val == 0: #set Z
             pass
@@ -102,7 +102,7 @@ def fetch_contents(context, stack, operator):
         if is_valid_stack_ref(context, stack, operator):
             offset = stack_offset(context, stack, operator)
             current_stack_pos = context[capstone.x86.X86_REG_ESP]
-            print("stack[%u, %u] -> " % (current_stack_pos, offset))
+            print("#stack[%u, %u] -> " % (current_stack_pos, offset))
             return stack[current_stack_pos + offset]
         raise "unknown should be a type"
     raise "fetch_contents type "+str(operator.type)+" not proccessed"
@@ -119,7 +119,7 @@ def is_valid_stack_ref(context, stack, operator):
 #operator <- what is a good name for this?
 def put_contents(context, stack, operator, value):
     #print(str(operator) + " <- " + str(value))
-    print("put_contents[%s] <- %s" % (operator_desc(operator), str(value)))
+    print("#put_contents[%s] <- %s" % (operator_desc(operator), str(value)))
     if operator.type == capstone.x86.X86_OP_REG:
         context[operator.reg] = value
         return None
@@ -127,7 +127,7 @@ def put_contents(context, stack, operator, value):
         if is_valid_stack_ref(context, stack, operator):
             offset = stack_offset(context, stack, operator)
             current_stack_pos = context[capstone.x86.X86_REG_ESP]
-            print("stack[%u, %u] <- " % (current_stack_pos, offset))
+            print("#stack[%u, %u] <- " % (current_stack_pos, offset))
             stack[current_stack_pos + offset] = value
             return None
 
@@ -164,10 +164,10 @@ def tracestuff(memdata, address):
     proccessed_i = None
     #
     #
-    address = address + i.size
-    #
-    #
     print("0x%x:\t%s\t%s" %(address, i.mnemonic, i.op_str))
+    #
+    #
+    address = address + i.size
     #
 
     if capstone.x86.X86_GRP_CALL in i.groups:
@@ -190,6 +190,12 @@ def tracestuff(memdata, address):
                 print("junk jump")
                 proccessed_i = "skip"
                 skip = True
+
+        #if operand is fixed, add to blocks
+        #will need the flags
+        #copy the conditional instruction
+        #
+
         if not(skip): #lord free us from this if!
             # raise "end of the block, unknown jump"
             # break
@@ -213,14 +219,14 @@ def tracestuff(memdata, address):
 
         stack[context[capstone.x86.X86_REG_ESP]] = context["flags"]
         #SS:ESP = Source //push doubleword
-        print(" <- " + str(context["flags"]))
+        print("# <- " + str(context["flags"]))
         proccessed_i = "skip"
 
     if i.mnemonic == "pop":
         current_stack_pos = context[capstone.x86.X86_REG_ESP]
 
         value = stack[current_stack_pos]
-        print(" -> " + str(value))
+        print("# -> " + str(value))
 
         #ESP = ESP + 4;
         context[capstone.x86.X86_REG_ESP] += 4
@@ -343,5 +349,21 @@ for i in range(0, int(esp_diff/4)):
 print(context)
 print(stuff)
 
-#want elixir bindings
-#these if/then/else fgs :(
+# expected output so far
+# eax            0xf7f88d88          -134705784
+# ecx            0xa40319cb          -1543300661
+# edx            0xffffda74          -9612
+# ebx            0x0                 0
+# esp            0xffffda40          0xffffda40
+# ebp            0x0                 0x0
+# esi            0xf7f86e24          -134713820
+# edi            0xf7f86e24          -134713820
+# eip            0x56556280          0x56556280 <__libc_csu_init>
+# eflags         0x292               [ AF SF IF ]
+# cs             0x23                35
+# ss             0x2b                43
+# ds             0x2b                43
+# es             0x2b                43
+# fs             0x0                 0
+# gs             0x63                99
+# stack:	0x00000346	0x0000037d	0x019b7157
