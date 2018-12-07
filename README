@@ -1,0 +1,42 @@
+ok, so the basic objetive
+
+we have the initial registers context
+
+[ o d I t s Z a P c ]
+[                   ]
+EIP 56556180 | .aUV | => `main in section .text of /home/sdancer/projects/ms2/res`
+EAX F7F88D88 | .... | => 0xFFFFDAEC => 0xFFFFDC6E => "_=/bin/gdb"
+EBX 00000000 | .... |
+EBP 00000000 | .... |
+ESP FFFFDA4C | L... | => 0xF7DC8B41 => `__libc_start_main + 241 in section .text of /usr/lib>
+EDI F7F86E24 | $n.. | => `_GLOBAL_OFFSET_TABLE_ in section .got of /usr/lib32/libc.so.6`
+ESI F7F86E24 | $n.. | => `_GLOBAL_OFFSET_TABLE_ in section .got of /usr/lib32/libc.so.6`
+EDX FFFFDA74 | t... |
+ECX BC7C3964 | d9|. |
+
+and we follow each instruction, as the instructions tranform the registers, we transform them too with the same effects
+then there is the stack, push, pop and mov will transform the stack
+and also the stack pointer (ESP FFFFDA4C), the stack pointer indicates where in the stack are we now
+0xFFFFDA4C: 41 8B DC F7
+a push will decrease the pointer by 4, a pop will increase it by 4
+so lets execute the next instruction pending
+so the stack moved to 0xFFFFDA48: 00 00 00 00
+the contents of the register where pushed into the stack position
+    0xFFFFDA44: 24 6E F8 F7
+another push
+ 0x56556181 <l0x1dbf71b>:	push   %edx
+and the stack will move another 4 bytes down(visualized up)
+this instruction will push edx, so the contents of edx = FFFFDA74
+will be placed into 0xFFFFDA48: 00 00 00 00 
+                    0xFFFFDA44: 74 DA FF FF 
+ok, so now the new pointer is FFFFDA44
+so we can translate the push(parameter) operation as
+ esp = esp - 4
+ [esp] = parameter
+
+that is it, we transform the registers and the stack as the real cpu would following the execution
+there is another class of instructions that we need to take care of, control flow
+which change the excution pointer (jump, jxx, call, ret, etc), to understand these is left as another exercise with the debugger
+just step over them (?)
+pop edx instruction executed will load the contents of current esp on edx and increase the esp by 4
+ok, have fun

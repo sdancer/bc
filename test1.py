@@ -39,6 +39,8 @@ def make_reg(reg):
 def is_int_value(value):
     if type(value) == type(0):
         return True
+    if type(value) == type(""): #probably a initial value
+        return False
     if value.type == capstone.xcore.XCORE_OP_IMM:
         return True
     return False
@@ -135,45 +137,40 @@ def put_contents(context, stack, operator, value):
 
 
 def tracestuff(memdata, address):
+  global stack, context, stuff
   count = 0
-  stack = [None] * 2048 * 1024 #maybe initialize a range of initial_stack above esp
-        #not 0, bcoz 0 might be a number in the future (?)
-        #wish had atoms, what is the equivalent, that isn't strings or constants?
-  stuff = []
-  initial_stack_pos = 1024 * 1024
-  context = {
-    capstone.x86.X86_REG_EAX: "initial_eax",
-    capstone.x86.X86_REG_EBX: "initial_ebx",
-    capstone.x86.X86_REG_ECX: "initial_ecx",
-    capstone.x86.X86_REG_EDX: "initial_edx",
-    capstone.x86.X86_REG_ESI: "initial_esi",
-    capstone.x86.X86_REG_EDI: "initial_edi",
-    capstone.x86.X86_REG_EBP: "initial_ebp",
-    #named tuples or whatever?
-    capstone.x86.X86_REG_ESP: initial_stack_pos,
-    "flags": "initial_flags" #gotta decompose in each flag
-  }
-  while count < 100:
+  while count < 10000:
     count += 1
     #
-    y = md.disasm(memdata[address-0x400000:][:100], address)
+    y = md.disasm(memdata[address-0x400000:address-0x400000+100], address)
     #
     #a fetch one verb should be better, which to use?
-    code = list(y) #since its a generator, gotta store to play
-    i = code[0]
+    i = next(y) #since its a generator, gotta store to play
     proccessed_i = None
     #
     #
-    print("0x%x:\t%s\t%s" %(address, i.mnemonic, i.op_str))
+    #if not(capstone.x86.X86_GRP_JUMP in i.groups):
+    print("l0x%x:\t%s\t%s" %(address, i.mnemonic, i.op_str.replace(" ptr ", "")))
     #
     #
     address = address + i.size
     #
 
     if capstone.x86.X86_GRP_CALL in i.groups:
+        if i.operands[0].type == 2:
+            if i.operands[0].imm == address:
+                #if lifting the block
+                #need to transform to a push(next address)
+                context[capstone.x86.X86_REG_ESP] -= 4
+                stack[context[capstone.x86.X86_REG_ESP]] = i.operands[0].imm
+                #handle as push address
+                print("#junk call")
+                proccessed_i = "skip"
+                skip = True
         #if constant, fork or follow?
-        raise "end of the block, unknown call"
-        break
+        if skip == False:
+            raise "end of the block, unknown call"
+            break
     if capstone.x86.X86_GRP_RET in i.groups:
         #if static, jump
         raise "end of the block, unknown ret"
@@ -187,7 +184,7 @@ def tracestuff(memdata, address):
             address = i.operands[0].imm
         elif i.operands[0].type == 2:
             if i.operands[0].imm == address:
-                print("junk jump")
+                print("#junk jump")
                 proccessed_i = "skip"
                 skip = True
 
@@ -283,6 +280,8 @@ def tracestuff(memdata, address):
     #latter add a map for clearness
     if i.mnemonic == "neg":
         proccessed_i = do_aritm(context, stack, aritm_neg, i.operands[0], make_int(0))
+    if i.mnemonic == "not":
+        proccessed_i = do_aritm(context, stack, aritm_not, i.operands[0], make_int(0))
 
     if i.mnemonic == "inc":
         proccessed_i = do_aritm(context, stack, aritm_add, i.operands[0], make_int(1))
@@ -309,6 +308,18 @@ def tracestuff(memdata, address):
 
     if i.mnemonic == "rtdsc":
         pass
+
+    #options
+    #serialize the state up to here and append the instructions
+    #   which is pretty easy
+    #lift SSA, chain of dependency
+    #starts feeling like i need IL,
+    #   which is beyond the scope of the tut :P
+    #for the current pos, xor(a,b b,a a,b)
+    # can read the full block and prefilter these to a xchg
+    # back to the need of an IL :P
+    # the transformation to that xchg isn't clean with
+    # the way the captone bindings are written
 
     if proccessed_i == None:
         return (stack, context, stuff)
@@ -338,16 +349,60 @@ def aritm_and(a,b):
     return a & b
 def aritm_neg(a,b):
     return 0 - a
+def aritm_not(a,b):
+    return ~ a
+
+reg_names = {
+capstone.x86.X86_REG_EAX: "EAX",
+capstone.x86.X86_REG_EBP: "EBP",
+capstone.x86.X86_REG_EBX: "EBX",
+capstone.x86.X86_REG_ECX: "ECX",
+capstone.x86.X86_REG_EDI: "EDI",
+capstone.x86.X86_REG_EDX: "EDX",
+capstone.x86.X86_REG_EFLAGS: "EFLAGS",
+capstone.x86.X86_REG_EIP: "EIP",
+capstone.x86.X86_REG_EIZ: "EIZ",
+capstone.x86.X86_REG_ES: "ES",
+capstone.x86.X86_REG_ESI: "ESI",
+capstone.x86.X86_REG_ESP: "ESP",
+}
+
+stack = [None] * 2048 * 1024 #maybe initialize a range of initial_stack above esp
+      #not 0, bcoz 0 might be a number in the future (?)
+      #wish had atoms, what is the equivalent, that isn't strings or constants?
+stuff = []
+initial_stack_pos = 1024 * 1024
+context = {
+  capstone.x86.X86_REG_EAX: "initial_eax",
+  capstone.x86.X86_REG_EBX: "initial_ebx",
+  capstone.x86.X86_REG_ECX: "initial_ecx",
+  capstone.x86.X86_REG_EDX: "initial_edx",
+  capstone.x86.X86_REG_ESI: "initial_esi",
+  capstone.x86.X86_REG_EDI: "initial_edi",
+  capstone.x86.X86_REG_EBP: "initial_ebp",
+  #named tuples or whatever?
+  capstone.x86.X86_REG_ESP: initial_stack_pos,
+  "flags": "initial_flags" #gotta decompose in each flag
+}
 
 #what sparse container can use?
-(stack, context, stuff) = tracestuff(x, 0x1DBF71A)
+import time
+t = time.time()
+tracestuff(x, 0x1DBF71A)
+tracestuff(x, 0x098B6B4)
+print(time.time() - t)
+#tracestuff(x, 0x1DBF71A)
+
 esp_diff = (1024 * 1024 - context[capstone.x86.X86_REG_ESP])
 print("esp diff: %x" % esp_diff)
 for i in range(0, int(esp_diff/4)):
     print("%s" % (value_desc(stack[context[capstone.x86.X86_REG_ESP] + i * 4])))
 
-print(context)
-print(stuff)
+for reg in context:
+    name = str(reg) if not(reg in reg_names) else reg_names[reg]
+    print(name + " = " + value_desc(context[reg]))
+less_stuff = [(a,b) for (a,b) in stuff if b != "skip"]
+print(less_stuff)
 
 # expected output so far
 # eax            0xf7f88d88          -134705784
@@ -367,3 +422,12 @@ print(stuff)
 # fs             0x0                 0
 # gs             0x63                99
 # stack:	0x00000346	0x0000037d	0x019b7157
+
+"""todo:
+so gotta make sure loops are processed once
+but for now any conditional branch will stop the script
+"""
+"""
+nasm -f elf32 res.asm
+gcc -m32 res.o -o res
+"""
