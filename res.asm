@@ -4,13 +4,17 @@ global main
 main:
 l0x1dbf71a:	push	ebx
 l0x1dbf71b:	push	edx
+; l0x1dbf71c:	jmp	0x1dbf728
 l0x1dbf728:	pop	edx
 ; -> initial_edx
 ;put_contents[XCORE_OP_REG] <- initial_edx
-l0x1dbf729:	pushad
+; l0x1dbf729:	pushal
+; l0x1dbf72a:	jmp	0x1dbf73c
+; l0x1dbf73c:	jae	0x1dbf742
 ;junk jump
+; l0x1dbf742:	jbe	0x1dbf748
 ;junk jump
-l0x1dbf748:	popad
+; l0x1dbf748:	popal
 l0x1dbf749:	pop	ebx
 ; -> initial_ebx
 ;put_contents[XCORE_OP_REG] <- initial_ebx
@@ -237,6 +241,10 @@ l0x1dbf846:	xchg	dword[esp], ecx
 l0x1dbf849:	pop	esp
 ; -> 1048564
 ;put_contents[XCORE_OP_REG] <- 1048564
+;l0x1dbf84a:	jmp	0x98b68f
+;junk jump
+; l0x98b695:	jmp	0x98b6a8
+; l0x98b6a8:	jmp	0x98b6b4
 l0x98b6b4:	sub	esp, 4
 ;put_contents[XCORE_OP_REG] <- 1048560
 l0x98b6ba:	mov	dword[esp], ebp
@@ -1126,25 +1134,1083 @@ l0x98bb01:	not	ecx
 ;put_contents[XCORE_OP_REG] <- 4122176898
 l0x98bb03:	xor	eax, ecx
 ;do_aritm[]] operator 1: XCORE_OP_REG
-; esp diff: 2c
-; initial_eax
-; initial_ebp
-; initial_ebp
-; initial_ebx
-; initial_ebx
-; initial_edx
-; initial_ecx
-; initial_eax
-; initial_flags
-; 37d
-; 19b7157
-; EAX = initial_ecx
-; EBP = initial_ebp
-; EBX = initial_ebx
-; ECX = f5b36d82
-; EDI = initial_edi
-; EDX = initial_edx
-; flags = initial_flags
-; ESI = initial_esi
-; ESP = fffd4
-; []
+;put_contents[XCORE_OP_REG] <- <tools.AbstractOp object at 0x7f4a9a1f4908>
+;abstract operation op1 <- AbstractOp()
+l0x98bb05:	xor	ecx, eax
+;do_aritm[]] operator 2: XCORE_OP_REG
+;put_contents[XCORE_OP_REG] <- initial_ecx
+;abstract operation op1 <- initial_ecx
+l0x98bb07:	xor	eax, ecx
+;do_aritm[]] operator 1: XCORE_OP_REG
+;do_aritm[]] operator 2: XCORE_OP_REG
+;put_contents[XCORE_OP_REG] <- 4122176898
+;abstract operation op1 <- f5b36d82
+l0x98bb09:	xchg	eax, ecx
+;put_contents[XCORE_OP_REG] <- initial_ecx
+;put_contents[XCORE_OP_REG] <- 4122176898
+l0x98bb0a:	not	ecx
+;put_contents[XCORE_OP_REG] <- 172790397
+l0x98bb0c:	xchg	eax, ecx
+;put_contents[XCORE_OP_REG] <- 172790397
+;put_contents[XCORE_OP_REG] <- initial_ecx
+l0x98bb0d:	sub	eax, 0x916b2ef3
+;put_contents[XCORE_OP_REG] <- 2028037002
+l0x98bb12:	mov	dword[esp + 4], eax
+;put_contents[XCORE_OP_MEM] <- 2028037002
+;stack[1048532, 4] <-
+l0x98bb16:	mov	eax, dword[esp]
+;stack[1048532, 0] ->
+;put_contents[XCORE_OP_REG] <- initial_eax
+l0x98bb19:	push	edx
+l0x98bb1a:	mov	edx, esp
+;put_contents[XCORE_OP_REG] <- 1048528
+l0x98bb1c:	add	edx, 4
+;put_contents[XCORE_OP_REG] <- 1048532
+l0x98bb22:	add	edx, 4
+;put_contents[XCORE_OP_REG] <- 1048536
+l0x98bb28:	xchg	dword[esp], edx
+;stack[1048528, 0] ->
+;put_contents[XCORE_OP_MEM] <- 1048536
+;stack[1048528, 0] <-
+;put_contents[XCORE_OP_REG] <- initial_edx
+l0x98bb2b:	mov	esp, dword[esp]
+;stack[1048528, 0] ->
+;put_contents[XCORE_OP_REG] <- 1048536
+l0x98bb2e:	mov	dword[esp], edi
+;put_contents[XCORE_OP_MEM] <- initial_edi
+;stack[1048536, 0] <-
+l0x98bb31:	mov	dword[esp], esi
+;put_contents[XCORE_OP_MEM] <- initial_esi
+;stack[1048536, 0] <-
+l0x98bb34:	push	edx
+l0x98bb35:	mov	edx, esp
+;put_contents[XCORE_OP_REG] <- 1048532
+l0x98bb37:	push	eax
+l0x98bb38:	mov	eax, 0x7bfe46ca
+;put_contents[XCORE_OP_REG] <- 2080261834
+l0x98bb3d:	inc	eax
+;put_contents[XCORE_OP_REG] <- 2080261835
+l0x98bb3e:	and	eax, 0x17b250c2
+;put_contents[XCORE_OP_REG] <- 330449090
+l0x98bb43:	xor	eax, 0x7ffbd8bc
+;put_contents[XCORE_OP_REG] <- 1816762494
+l0x98bb48:	neg	eax
+;put_contents[XCORE_OP_REG] <- 2478204802
+l0x98bb4a:	xor	eax, 0x93b66786
+;put_contents[XCORE_OP_REG] <- 4
+l0x98bb4f:	add	edx, eax
+;put_contents[XCORE_OP_REG] <- 1048536
+l0x98bb51:	pop	eax
+; -> initial_eax
+;put_contents[XCORE_OP_REG] <- initial_eax
+l0x98bb52:	push	0x58aeadf1
+l0x98bb57:	mov	dword[esp], eax
+;put_contents[XCORE_OP_MEM] <- initial_eax
+;stack[1048528, 0] <-
+l0x98bb5a:	mov	eax, 4
+;put_contents[XCORE_OP_REG] <- 4
+l0x98bb5f:	push	edx
+l0x98bb60:	mov	dword[esp], esi
+;put_contents[XCORE_OP_MEM] <- initial_esi
+;stack[1048524, 0] <-
+l0x98bb63:	push	0x7fbf57d7
+l0x98bb68:	mov	esi, dword[esp]
+;stack[1048520, 0] ->
+;put_contents[XCORE_OP_REG] <- 2143246295
+l0x98bb6b:	add	esp, 4
+;put_contents[XCORE_OP_REG] <- 1048524
+l0x98bb6e:	not	esi
+;put_contents[XCORE_OP_REG] <- 2151721000
+l0x98bb70:	push	eax
+l0x98bb71:	mov	eax, 0
+;put_contents[XCORE_OP_REG] <- 0
+l0x98bb76:	sub	eax, 0x73efe0d7
+;put_contents[XCORE_OP_REG] <- 2349866793
+l0x98bb7b:	sub	eax, esi
+;put_contents[XCORE_OP_REG] <- 198145793
+l0x98bb7d:	add	eax, 0x73efe0d7
+;put_contents[XCORE_OP_REG] <- 2143246296
+l0x98bb82:	mov	esi, eax
+;put_contents[XCORE_OP_REG] <- 2143246296
+l0x98bb84:	pop	eax
+; -> 4
+;put_contents[XCORE_OP_REG] <- 4
+l0x98bb85:	sub	esi, 0x55c371b4
+;put_contents[XCORE_OP_REG] <- 704374308
+l0x98bb8b:	add	edx, 0x7d4f7b5d
+;put_contents[XCORE_OP_REG] <- 2103409461
+l0x98bb91:	add	edx, esi
+;put_contents[XCORE_OP_REG] <- 2807783769
+l0x98bb93:	sub	edx, 0x7d4f7b5d
+;put_contents[XCORE_OP_REG] <- 705422844
+l0x98bb99:	pop	esi
+; -> initial_esi
+;put_contents[XCORE_OP_REG] <- initial_esi
+l0x98bb9a:	sub	edx, eax
+;put_contents[XCORE_OP_REG] <- 705422840
+l0x98bb9c:	push	ebx
+l0x98bb9d:	mov	ebx, 0x2f89ce34
+;put_contents[XCORE_OP_REG] <- 797560372
+l0x98bba2:	sub	ebx, 0x58de810
+;put_contents[XCORE_OP_REG] <- 704374308
+l0x98bba8:	sub	edx, ebx
+;put_contents[XCORE_OP_REG] <- 1048532
+l0x98bbaa:	pop	ebx
+; -> initial_ebx
+;put_contents[XCORE_OP_REG] <- initial_ebx
+l0x98bbab:	mov	eax, dword[esp]
+;stack[1048528, 0] ->
+;put_contents[XCORE_OP_REG] <- initial_eax
+l0x98bbae:	push	ecx
+l0x98bbaf:	push	esp
+l0x98bbb0:	pop	ecx
+; -> 1048524
+;put_contents[XCORE_OP_REG] <- 1048524
+l0x98bbb1:	add	ecx, 4
+;put_contents[XCORE_OP_REG] <- 1048528
+l0x98bbb7:	add	ecx, 4
+;put_contents[XCORE_OP_REG] <- 1048532
+l0x98bbba:	xor	ecx, dword[esp]
+;stack[1048524, 0] ->
+;do_aritm[]] operator 2: XCORE_OP_MEM
+;put_contents[XCORE_OP_REG] <- <tools.AbstractOp object at 0x7f4a9a1baa90>
+;abstract operation op1 <- AbstractOp()
+l0x98bbbd:	xor	dword[esp], ecx
+;stack[1048524, 0] ->
+;do_aritm[]] operator 1: XCORE_OP_MEM
+;do_aritm[]] operator 2: XCORE_OP_REG
+;put_contents[XCORE_OP_MEM] <- 1048532
+;stack[1048524, 0] <-
+;abstract operation op1 <- fffd4
+l0x98bbc0:	xor	ecx, dword[esp]
+;stack[1048524, 0] ->
+;do_aritm[]] operator 1: XCORE_OP_REG
+;put_contents[XCORE_OP_REG] <- initial_ecx
+;abstract operation op1 <- initial_ecx
+l0x98bbc3:	pop	esp
+; -> 1048532
+;put_contents[XCORE_OP_REG] <- 1048532
+l0x98bbc4:	xor	edx, dword[esp]
+;stack[1048532, 0] ->
+;do_aritm[]] operator 2: XCORE_OP_MEM
+;put_contents[XCORE_OP_REG] <- <tools.AbstractOp object at 0x7f4a9a1bac88>
+;abstract operation op1 <- AbstractOp()
+l0x98bbc7:	xor	dword[esp], edx
+;stack[1048532, 0] ->
+;do_aritm[]] operator 1: XCORE_OP_MEM
+;do_aritm[]] operator 2: XCORE_OP_REG
+;put_contents[XCORE_OP_MEM] <- 1048532
+;stack[1048532, 0] <-
+;abstract operation op1 <- fffd4
+l0x98bbca:	xor	edx, dword[esp]
+;stack[1048532, 0] ->
+;do_aritm[]] operator 1: XCORE_OP_REG
+;put_contents[XCORE_OP_REG] <- initial_edx
+;abstract operation op1 <- initial_edx
+l0x98bbcd:	mov	esp, dword[esp]
+;stack[1048532, 0] ->
+;put_contents[XCORE_OP_REG] <- 1048532
+l0x98bbd0:	mov	dword[esp], edi
+;put_contents[XCORE_OP_MEM] <- initial_edi
+;stack[1048532, 0] <-
+l0x98bbd3:	push	0x98bbd8
+;junk call
+;junk call
+l0x98bbd8:	push	dword[esp]
+;stack[1048528, 0] ->
+l0x98bbdb:	push	dword[esp]
+;stack[1048524, 0] ->
+l0x98bbde:	pop	ecx
+; -> 10009560
+;put_contents[XCORE_OP_REG] <- 10009560
+l0x98bbdf:	push	ecx
+l0x98bbe0:	mov	dword[esp], eax
+;put_contents[XCORE_OP_MEM] <- initial_eax
+;stack[1048520, 0] <-
+l0x98bbe3:	push	esp
+l0x98bbe4:	pop	eax
+; -> 1048520
+;put_contents[XCORE_OP_REG] <- 1048520
+l0x98bbe5:	add	eax, 4
+;put_contents[XCORE_OP_REG] <- 1048524
+l0x98bbea:	push	0x1074faee
+l0x98bbef:	mov	dword[esp], ebp
+;put_contents[XCORE_OP_MEM] <- initial_ebp
+;stack[1048516, 0] <-
+l0x98bbf2:	mov	ebp, 4
+;put_contents[XCORE_OP_REG] <- 4
+l0x98bbf7:	add	eax, ebp
+;put_contents[XCORE_OP_REG] <- 1048528
+l0x98bbf9:	pop	ebp
+; -> initial_ebp
+;put_contents[XCORE_OP_REG] <- initial_ebp
+l0x98bbfa:	push	eax
+l0x98bbfb:	push	dword[esp + 4]
+;stack[1048516, 4] ->
+l0x98bbff:	pop	eax
+; -> initial_eax
+;put_contents[XCORE_OP_REG] <- initial_eax
+l0x98bc00:	pop	dword[esp]
+; -> 1048528
+;put_contents[XCORE_OP_MEM] <- 1048528
+;stack[1048520, 0] <-
+l0x98bc03:	pop	esp
+; -> 1048528
+;put_contents[XCORE_OP_REG] <- 1048528
+l0x98bc04:	push	edi
+l0x98bc05:	push	esp
+l0x98bc06:	push	dword[esp]
+;stack[1048520, 0] ->
+l0x98bc09:	pop	edi
+; -> 1048524
+;put_contents[XCORE_OP_REG] <- 1048524
+l0x98bc0a:	add	esp, 4
+;put_contents[XCORE_OP_REG] <- 1048524
+l0x98bc0d:	push	edx
+l0x98bc0e:	mov	edx, 4
+;put_contents[XCORE_OP_REG] <- 4
+l0x98bc13:	add	edi, edx
+;put_contents[XCORE_OP_REG] <- 1048528
+l0x98bc15:	pop	edx
+; -> initial_edx
+;put_contents[XCORE_OP_REG] <- initial_edx
+l0x98bc16:	sub	esp, 4
+;put_contents[XCORE_OP_REG] <- 1048520
+l0x98bc1c:	mov	dword[esp], ecx
+;put_contents[XCORE_OP_MEM] <- 10009560
+;stack[1048520, 0] <-
+l0x98bc1f:	mov	ecx, 4
+;put_contents[XCORE_OP_REG] <- 4
+l0x98bc24:	add	edi, 0x573fdeda
+;put_contents[XCORE_OP_REG] <- 1464852138
+l0x98bc2a:	add	edi, ecx
+;put_contents[XCORE_OP_REG] <- 1464852142
+l0x98bc2c:	sub	edi, 0x573fdeda
+;put_contents[XCORE_OP_REG] <- 1048532
+l0x98bc32:	mov	ecx, dword[esp]
+;stack[1048520, 0] ->
+;put_contents[XCORE_OP_REG] <- 10009560
+l0x98bc35:	add	esp, 4
+;put_contents[XCORE_OP_REG] <- 1048524
+l0x98bc38:	xchg	dword[esp], edi
+;stack[1048524, 0] ->
+;put_contents[XCORE_OP_MEM] <- 1048532
+;stack[1048524, 0] <-
+;put_contents[XCORE_OP_REG] <- initial_edi
+l0x98bc3b:	mov	esp, dword[esp]
+;stack[1048524, 0] ->
+;put_contents[XCORE_OP_REG] <- 1048532
+l0x98bc3e:	push	0x56833c7f
+l0x98bc43:	mov	dword[esp], ebp
+;put_contents[XCORE_OP_MEM] <- initial_ebp
+;stack[1048528, 0] <-
+l0x98bc46:	mov	dword[esp], eax
+;put_contents[XCORE_OP_MEM] <- initial_eax
+;stack[1048528, 0] <-
+l0x98bc49:	push	esp
+l0x98bc4a:	pop	eax
+; -> 1048528
+;put_contents[XCORE_OP_REG] <- 1048528
+l0x98bc4b:	push	esi
+l0x98bc4c:	mov	esi, 0x57d331f5
+;put_contents[XCORE_OP_REG] <- 1473458677
+l0x98bc51:	shl	esi, 6
+;put_contents[XCORE_OP_REG] <- 4107042112
+l0x98bc54:	add	esi, 0xb3382c4
+;put_contents[XCORE_OP_REG] <- 4
+l0x98bc5a:	add	eax, esi
+;put_contents[XCORE_OP_REG] <- 1048532
+l0x98bc5c:	mov	esi, dword[esp]
+;stack[1048524, 0] ->
+;put_contents[XCORE_OP_REG] <- initial_esi
+l0x98bc5f:	add	esp, 4
+;put_contents[XCORE_OP_REG] <- 1048528
+l0x98bc62:	sub	eax, 4
+;put_contents[XCORE_OP_REG] <- 1048528
+l0x98bc67:	xchg	dword[esp], eax
+;stack[1048528, 0] ->
+;put_contents[XCORE_OP_MEM] <- 1048528
+;stack[1048528, 0] <-
+;put_contents[XCORE_OP_REG] <- initial_eax
+l0x98bc6a:	mov	esp, dword[esp]
+;stack[1048528, 0] ->
+;put_contents[XCORE_OP_REG] <- 1048528
+l0x98bc6d:	mov	dword[esp], eax
+;put_contents[XCORE_OP_MEM] <- initial_eax
+;stack[1048528, 0] <-
+l0x98bc70:	mov	dword[esp], ebp
+;put_contents[XCORE_OP_MEM] <- initial_ebp
+;stack[1048528, 0] <-
+l0x98bc73:	push	eax
+l0x98bc74:	push	0x7d3c7975
+l0x98bc79:	pop	eax
+; -> 2101115253
+;put_contents[XCORE_OP_REG] <- 2101115253
+l0x98bc7a:	add	eax, 0x3f577e28
+;put_contents[XCORE_OP_REG] <- 3163813789
+l0x98bc7f:	sub	eax, 0xbc93f254
+;put_contents[XCORE_OP_REG] <- 1353
+l0x98bc84:	mov	ebp, eax
+;put_contents[XCORE_OP_REG] <- 1353
+l0x98bc86:	pop	eax
+; -> initial_eax
+;put_contents[XCORE_OP_REG] <- initial_eax
+l0x98bc87:	sub	ecx, ebp
+;put_contents[XCORE_OP_REG] <- 10008207
+l0x98bc89:	mov	ebp, dword[esp]
+;stack[1048528, 0] ->
+;put_contents[XCORE_OP_REG] <- initial_ebp
+l0x98bc8c:	push	edx
+l0x98bc8d:	push	esp
+l0x98bc8e:	pop	edx
+; -> 1048524
+;put_contents[XCORE_OP_REG] <- 1048524
+l0x98bc8f:	add	edx, 4
+;put_contents[XCORE_OP_REG] <- 1048528
+l0x98bc95:	push	ecx
+l0x98bc96:	mov	ecx, 4
+;put_contents[XCORE_OP_REG] <- 4
+l0x98bc9b:	sub	edx, 0x7fd7fc5a
+;put_contents[XCORE_OP_REG] <- 2151154550
+l0x98bca1:	add	edx, ecx
+;put_contents[XCORE_OP_REG] <- 2151154554
+l0x98bca3:	push	ecx
+l0x98bca4:	mov	ecx, 0x7fd7fc5a
+;put_contents[XCORE_OP_REG] <- 2144861274
+l0x98bca9:	add	edx, ecx
+;put_contents[XCORE_OP_REG] <- 1048532
+l0x98bcab:	pop	ecx
+; -> 4
+;put_contents[XCORE_OP_REG] <- 4
+l0x98bcac:	mov	ecx, dword[esp]
+;stack[1048520, 0] ->
+;put_contents[XCORE_OP_REG] <- 10008207
+l0x98bcaf:	add	esp, 4
+;put_contents[XCORE_OP_REG] <- 1048524
+l0x98bcb2:	push	edx
+l0x98bcb3:	push	dword[esp + 4]
+;stack[1048520, 4] ->
+l0x98bcb7:	pop	edx
+; -> initial_edx
+;put_contents[XCORE_OP_REG] <- initial_edx
+l0x98bcb8:	pop	dword[esp]
+; -> 1048532
+;put_contents[XCORE_OP_MEM] <- 1048532
+;stack[1048524, 0] <-
+l0x98bcbb:	mov	esp, dword[esp]
+;stack[1048524, 0] ->
+;put_contents[XCORE_OP_REG] <- 1048532
+l0x98bcbe:	push	0xda41ddf
+l0x98bcc3:	mov	dword[esp], esi
+;put_contents[XCORE_OP_MEM] <- initial_esi
+;stack[1048528, 0] <-
+l0x98bcc6:	sub	esp, 4
+;put_contents[XCORE_OP_REG] <- 1048524
+l0x98bcc9:	mov	dword[esp], edx
+;put_contents[XCORE_OP_MEM] <- initial_edx
+;stack[1048524, 0] <-
+l0x98bccc:	push	edi
+l0x98bccd:	mov	edi, 0x67e3d6f1
+;put_contents[XCORE_OP_REG] <- 1742984945
+l0x98bcd2:	mov	edx, 0xe320feec
+;put_contents[XCORE_OP_REG] <- 3810590444
+l0x98bcd7:	sub	edx, edi
+;put_contents[XCORE_OP_REG] <- 2067605499
+l0x98bcd9:	pop	edi
+; -> initial_edi
+;put_contents[XCORE_OP_REG] <- initial_edi
+l0x98bcda:	sub	edx, 0x7f7b15a5
+;put_contents[XCORE_OP_REG] <- 4223799894
+l0x98bce0:	push	ebx
+l0x98bce1:	mov	dword[esp], esi
+;put_contents[XCORE_OP_MEM] <- initial_esi
+;stack[1048520, 0] <-
+l0x98bce4:	mov	dword[esp], ecx
+;put_contents[XCORE_OP_MEM] <- 10008207
+;stack[1048520, 0] <-
+l0x98bce7:	push	ebx
+l0x98bce8:	mov	ebx, 0x4f7f3421
+;put_contents[XCORE_OP_REG] <- 1333736481
+l0x98bced:	sub	ebx, 0x53e48f48
+;put_contents[XCORE_OP_REG] <- 4221215961
+l0x98bcf3:	mov	ecx, ebx
+;put_contents[XCORE_OP_REG] <- 4221215961
+l0x98bcf5:	pop	ebx
+; -> initial_ebx
+;put_contents[XCORE_OP_REG] <- initial_ebx
+l0x98bcf6:	xor	edx, ecx
+;put_contents[XCORE_OP_REG] <- 5813903
+l0x98bcf8:	mov	ecx, dword[esp]
+;stack[1048520, 0] ->
+;put_contents[XCORE_OP_REG] <- 10008207
+l0x98bcfb:	add	esp, 4
+;put_contents[XCORE_OP_REG] <- 1048524
+l0x98bcfe:	mov	esi, edx
+;put_contents[XCORE_OP_REG] <- 5813903
+l0x98bd00:	pop	edx
+; -> initial_edx
+;put_contents[XCORE_OP_REG] <- initial_edx
+l0x98bd01:	sub	esp, 4
+;put_contents[XCORE_OP_REG] <- 1048524
+l0x98bd04:	mov	dword[esp], edx
+;put_contents[XCORE_OP_MEM] <- initial_edx
+;stack[1048524, 0] <-
+l0x98bd07:	mov	edx, 0x3fffc4a7
+;put_contents[XCORE_OP_REG] <- 1073726631
+l0x98bd0c:	shr	edx, 2
+;put_contents[XCORE_OP_REG] <- 268431657
+l0x98bd0f:	sub	edx, 0x5d7d74a2
+;put_contents[XCORE_OP_REG] <- 2994896007
+l0x98bd15:	add	edx, 0x3c9bf4b4
+;put_contents[XCORE_OP_REG] <- 4011749691
+l0x98bd1b:	dec	edx
+;put_contents[XCORE_OP_REG] <- 4011749690
+l0x98bd1c:	sub	edx, 0x6f42dead
+;put_contents[XCORE_OP_REG] <- 2145096333
+l0x98bd22:	add	ecx, edx
+;put_contents[XCORE_OP_REG] <- 2155104540
+l0x98bd24:	mov	edx, dword[esp]
+;stack[1048524, 0] ->
+;put_contents[XCORE_OP_REG] <- initial_edx
+l0x98bd27:	add	esp, 4
+;put_contents[XCORE_OP_REG] <- 1048528
+l0x98bd2a:	push	ebx
+l0x98bd2b:	mov	ebx, 0x7f7d3bb7
+;put_contents[XCORE_OP_REG] <- 2138913719
+l0x98bd30:	sub	ecx, ebx
+;put_contents[XCORE_OP_REG] <- 16190821
+l0x98bd32:	pop	ebx
+; -> initial_ebx
+;put_contents[XCORE_OP_REG] <- initial_ebx
+l0x98bd33:	sub	ecx, 0x3cf8b725
+;put_contents[XCORE_OP_REG] <- 3288225344
+l0x98bd39:	sub	ecx, esi
+;put_contents[XCORE_OP_REG] <- 3282411441
+l0x98bd3b:	add	ecx, 0x3cf8b725
+;put_contents[XCORE_OP_REG] <- 10376918
+l0x98bd41:	push	ebp
+l0x98bd42:	mov	ebp, 0x7f7d3bb7
+;put_contents[XCORE_OP_REG] <- 2138913719
+l0x98bd47:	add	ecx, ebp
+;put_contents[XCORE_OP_REG] <- 2149290637
+l0x98bd49:	pop	ebp
+; -> initial_ebp
+;put_contents[XCORE_OP_REG] <- initial_ebp
+l0x98bd4a:	push	ebx
+l0x98bd4b:	mov	ebx, 0x7fdb928d
+;put_contents[XCORE_OP_REG] <- 2145096333
+l0x98bd50:	sub	ecx, ebx
+;put_contents[XCORE_OP_REG] <- 4194304
+l0x98bd52:	pop	ebx
+; -> initial_ebx
+;put_contents[XCORE_OP_REG] <- initial_ebx
+l0x98bd53:	mov	esi, dword[esp]
+;stack[1048528, 0] ->
+;put_contents[XCORE_OP_REG] <- initial_esi
+l0x98bd56:	add	esp, 4
+;put_contents[XCORE_OP_REG] <- 1048532
+l0x98bd5c:	push	edx
+l0x98bd5d:	mov	edx, esp
+;put_contents[XCORE_OP_REG] <- 1048528
+l0x98bd5f:	push	esi
+l0x98bd60:	mov	esi, 4
+;put_contents[XCORE_OP_REG] <- 4
+l0x98bd65:	sub	edx, 0x76f6d711
+;put_contents[XCORE_OP_REG] <- 2300127423
+l0x98bd6b:	sub	edx, 0x5fefa834
+;put_contents[XCORE_OP_REG] <- 690585739
+l0x98bd71:	add	edx, esi
+;put_contents[XCORE_OP_REG] <- 690585743
+l0x98bd73:	add	edx, 0x5fefa834
+;put_contents[XCORE_OP_REG] <- 2300127427
+l0x98bd79:	push	edi
+l0x98bd7a:	mov	edi, 0x76f6d711
+;put_contents[XCORE_OP_REG] <- 1995888401
+l0x98bd7f:	add	edx, edi
+;put_contents[XCORE_OP_REG] <- 1048532
+l0x98bd81:	pop	edi
+; -> initial_edi
+;put_contents[XCORE_OP_REG] <- initial_edi
+l0x98bd82:	pop	esi
+; -> initial_esi
+;put_contents[XCORE_OP_REG] <- initial_esi
+l0x98bd83:	sub	edx, 4
+;put_contents[XCORE_OP_REG] <- 1048528
+l0x98bd86:	push	edi
+l0x98bd87:	mov	edi, esp
+;put_contents[XCORE_OP_REG] <- 1048524
+l0x98bd89:	push	ebp
+l0x98bd8a:	mov	ebp, 4
+;put_contents[XCORE_OP_REG] <- 4
+l0x98bd8f:	add	edi, ebp
+;put_contents[XCORE_OP_REG] <- 1048528
+l0x98bd91:	pop	ebp
+; -> initial_ebp
+;put_contents[XCORE_OP_REG] <- initial_ebp
+l0x98bd92:	sub	edi, 4
+;put_contents[XCORE_OP_REG] <- 1048524
+l0x98bd98:	xchg	dword[esp], edi
+;stack[1048524, 0] ->
+;put_contents[XCORE_OP_MEM] <- 1048524
+;stack[1048524, 0] <-
+;put_contents[XCORE_OP_REG] <- initial_edi
+l0x98bd9b:	pop	esp
+; -> 1048524
+;put_contents[XCORE_OP_REG] <- 1048524
+l0x98bd9c:	mov	dword[esp], edx
+;put_contents[XCORE_OP_MEM] <- 1048528
+;stack[1048524, 0] <-
+l0x98bd9f:	push	dword[esp + 4]
+;stack[1048524, 4] ->
+l0x98bda3:	pop	edx
+; -> initial_edx
+;put_contents[XCORE_OP_REG] <- initial_edx
+l0x98bda4:	pop	dword[esp]
+; -> 1048528
+;put_contents[XCORE_OP_MEM] <- 1048528
+;stack[1048528, 0] <-
+l0x98bda7:	pop	esp
+; -> 1048528
+;put_contents[XCORE_OP_REG] <- 1048528
+l0x98bda8:	mov	dword[esp], edx
+;put_contents[XCORE_OP_MEM] <- initial_edx
+;stack[1048528, 0] <-
+l0x98bdab:	push	0x777fb361
+l0x98bdb0:	pop	edx
+; -> 2004857697
+;put_contents[XCORE_OP_REG] <- 2004857697
+l0x98bdb1:	xor	edx, 0x77445544
+;put_contents[XCORE_OP_REG] <- 3925541
+l0x98bdb7:	mov	ebp, edx
+;put_contents[XCORE_OP_REG] <- 3925541
+l0x98bdb9:	push	dword[esp]
+;stack[1048528, 0] ->
+l0x98bdbc:	pop	edx
+; -> initial_edx
+;put_contents[XCORE_OP_REG] <- initial_edx
+l0x98bdbd:	sub	esp, 4
+;put_contents[XCORE_OP_REG] <- 1048524
+l0x98bdc3:	mov	dword[esp], eax
+;put_contents[XCORE_OP_MEM] <- initial_eax
+;stack[1048524, 0] <-
+l0x98bdc6:	push	esp
+l0x98bdc7:	pop	eax
+; -> 1048524
+;put_contents[XCORE_OP_REG] <- 1048524
+l0x98bdc8:	add	eax, 4
+;put_contents[XCORE_OP_REG] <- 1048528
+l0x98bdcd:	push	0x13cf3cd0
+l0x98bdd2:	mov	dword[esp], ebx
+;put_contents[XCORE_OP_MEM] <- initial_ebx
+;stack[1048520, 0] <-
+l0x98bdd5:	mov	ebx, 4
+;put_contents[XCORE_OP_REG] <- 4
+l0x98bdda:	add	eax, ebx
+;put_contents[XCORE_OP_REG] <- 1048532
+l0x98bddc:	mov	ebx, dword[esp]
+;stack[1048520, 0] ->
+;put_contents[XCORE_OP_REG] <- initial_ebx
+l0x98bddf:	add	esp, 4
+;put_contents[XCORE_OP_REG] <- 1048524
+l0x98bde2:	xchg	dword[esp], eax
+;stack[1048524, 0] ->
+;put_contents[XCORE_OP_MEM] <- 1048532
+;stack[1048524, 0] <-
+;put_contents[XCORE_OP_REG] <- initial_eax
+l0x98bde5:	mov	esp, dword[esp]
+;stack[1048524, 0] ->
+;put_contents[XCORE_OP_REG] <- 1048532
+l0x98bde8:	push	edx
+l0x98bde9:	mov	dword[esp], 0x4e4be292
+;put_contents[XCORE_OP_MEM] <- 1313596050
+;stack[1048528, 0] <-
+l0x98bdf0:	mov	dword[esp], eax
+;put_contents[XCORE_OP_MEM] <- initial_eax
+;stack[1048528, 0] <-
+l0x98bdf3:	mov	eax, 0x5bed5217
+;put_contents[XCORE_OP_REG] <- 1542279703
+l0x98bdf8:	add	ebp, eax
+;put_contents[XCORE_OP_REG] <- 1546205244
+l0x98bdfa:	pop	eax
+; -> initial_eax
+;put_contents[XCORE_OP_REG] <- initial_eax
+l0x98bdfb:	add	ebp, 0x7dffaa62
+;put_contents[XCORE_OP_REG] <- 3660112542
+l0x98be01:	add	ebp, 0x6bf74ee5
+;put_contents[XCORE_OP_REG] <- 1176514947
+l0x98be07:	add	ebp, ecx
+;put_contents[XCORE_OP_REG] <- 1180709251
+l0x98be09:	sub	ebp, 0x6bf74ee5
+;put_contents[XCORE_OP_REG] <- 3664306846
+l0x98be0f:	push	edx
+l0x98be10:	push	0x3fff9123
+l0x98be15:	mov	edx, dword[esp]
+;stack[1048524, 0] ->
+;put_contents[XCORE_OP_REG] <- 1073713443
+l0x98be18:	add	esp, 4
+;put_contents[XCORE_OP_REG] <- 1048528
+l0x98be1b:	inc	edx
+;put_contents[XCORE_OP_REG] <- 1073713444
+l0x98be1c:	shl	edx, 6
+;put_contents[XCORE_OP_REG] <- 4293150976
+l0x98be1f:	xor	edx, 0x821be362
+;put_contents[XCORE_OP_REG] <- 2113907298
+l0x98be25:	sub	ebp, edx
+;put_contents[XCORE_OP_REG] <- 1550399548
+l0x98be27:	mov	edx, dword[esp]
+;stack[1048528, 0] ->
+;put_contents[XCORE_OP_REG] <- initial_edx
+l0x98be2a:	add	esp, 4
+;put_contents[XCORE_OP_REG] <- 1048532
+l0x98be2d:	push	edi
+l0x98be2e:	mov	edi, 0x7f3e3400
+;put_contents[XCORE_OP_REG] <- 2134782976
+l0x98be33:	shl	edi, 3
+;put_contents[XCORE_OP_REG] <- 4193361920
+l0x98be36:	push	eax
+l0x98be37:	mov	eax, 0xb9f959c
+;put_contents[XCORE_OP_REG] <- 195007900
+l0x98be3c:	shl	eax, 3
+;put_contents[XCORE_OP_REG] <- 1560063200
+l0x98be3f:	sub	eax, 0x1ffdaeed
+;put_contents[XCORE_OP_REG] <- 1023344115
+l0x98be44:	shl	eax, 8
+;put_contents[XCORE_OP_REG] <- 4278055680
+l0x98be47:	or	eax, 0x1ffff329
+;put_contents[XCORE_OP_REG] <- 4294964009
+l0x98be4c:	push	edi
+l0x98be4d:	mov	edi, 0x7d777ffa
+;put_contents[XCORE_OP_REG] <- 2104983546
+l0x98be52:	shr	edi, 3
+;put_contents[XCORE_OP_REG] <- 263122943
+l0x98be55:	push	esi
+l0x98be56:	mov	esi, 0x766edd3d
+;put_contents[XCORE_OP_REG] <- 1986977085
+l0x98be5b:	add	esi, 0xfb7c74be
+;put_contents[XCORE_OP_REG] <- 1911247355
+l0x98be61:	xor	edi, esi
+;put_contents[XCORE_OP_REG] <- 2118499844
+l0x98be63:	pop	esi
+; -> initial_esi
+;put_contents[XCORE_OP_REG] <- initial_esi
+l0x98be64:	shr	edi, 4
+;put_contents[XCORE_OP_REG] <- 132406240
+l0x98be67:	push	esi
+l0x98be68:	mov	esi, 0x87443fde
+;put_contents[XCORE_OP_REG] <- 2269396958
+l0x98be6d:	sub	edi, esi
+;put_contents[XCORE_OP_REG] <- 2157976578
+l0x98be6f:	pop	esi
+; -> initial_esi
+;put_contents[XCORE_OP_REG] <- initial_esi
+l0x98be70:	sub	eax, edi
+;put_contents[XCORE_OP_REG] <- 2136987431
+l0x98be72:	pop	edi
+; -> 4193361920
+;put_contents[XCORE_OP_REG] <- 4193361920
+l0x98be73:	xor	edi, eax
+;put_contents[XCORE_OP_REG] <- 2259580711
+l0x98be75:	mov	eax, dword[esp]
+;stack[1048524, 0] ->
+;put_contents[XCORE_OP_REG] <- initial_eax
+l0x98be78:	add	esp, 4
+;put_contents[XCORE_OP_REG] <- 1048528
+l0x98be7b:	sub	edi, 0x3b59c499
+;put_contents[XCORE_OP_REG] <- 1263841934
+l0x98be81:	add	edi, 0x10989f89
+;put_contents[XCORE_OP_REG] <- 1542279703
+l0x98be87:	sub	ebp, edi
+;put_contents[XCORE_OP_REG] <- 8119845
+l0x98be89:	mov	edi, dword[esp]
+;stack[1048528, 0] ->
+;put_contents[XCORE_OP_REG] <- initial_edi
+l0x98be8c:	push	edx
+l0x98be8d:	push	esp
+l0x98be8e:	pop	edx
+; -> 1048524
+;put_contents[XCORE_OP_REG] <- 1048524
+l0x98be8f:	add	edx, 4
+;put_contents[XCORE_OP_REG] <- 1048528
+l0x98be95:	push	ebx
+l0x98be96:	mov	ebx, 4
+;put_contents[XCORE_OP_REG] <- 4
+l0x98be9b:	add	edx, ebx
+;put_contents[XCORE_OP_REG] <- 1048532
+l0x98be9d:	pop	ebx
+; -> initial_ebx
+;put_contents[XCORE_OP_REG] <- initial_ebx
+l0x98be9e:	xchg	dword[esp], edx
+;stack[1048524, 0] ->
+;put_contents[XCORE_OP_MEM] <- 1048532
+;stack[1048524, 0] <-
+;put_contents[XCORE_OP_REG] <- initial_edx
+l0x98bea1:	pop	esp
+; -> 1048532
+;put_contents[XCORE_OP_REG] <- 1048532
+l0x98bea2:	push	edi
+l0x98bea3:	push	esp
+l0x98bea4:	mov	edi, dword[esp]
+;stack[1048524, 0] ->
+;put_contents[XCORE_OP_REG] <- 1048528
+l0x98bea7:	add	esp, 4
+;put_contents[XCORE_OP_REG] <- 1048528
+l0x98bead:	push	eax
+l0x98beae:	push	edx
+l0x98beaf:	mov	edx, 0x7f7b0bc9
+;put_contents[XCORE_OP_REG] <- 2138770377
+l0x98beb4:	mov	eax, 0xb55ec9ca
+;put_contents[XCORE_OP_REG] <- 3042888138
+l0x98beb9:	sub	eax, edx
+;put_contents[XCORE_OP_REG] <- 904117761
+l0x98bebb:	pop	edx
+; -> initial_edx
+;put_contents[XCORE_OP_REG] <- initial_edx
+l0x98bebc:	push	0xadb46ab
+l0x98bec1:	mov	dword[esp], esi
+;put_contents[XCORE_OP_MEM] <- initial_esi
+;stack[1048520, 0] <-
+l0x98bec4:	mov	esi, 0xffffffff
+;put_contents[XCORE_OP_REG] <- 4294967295
+l0x98bec9:	sub	eax, 0x130d18e8
+;put_contents[XCORE_OP_REG] <- 584492313
+l0x98bece:	sub	eax, esi
+;put_contents[XCORE_OP_REG] <- 584492314
+l0x98bed0:	add	eax, 0x130d18e8
+;put_contents[XCORE_OP_REG] <- 904117762
+l0x98bed5:	pop	esi
+; -> initial_esi
+;put_contents[XCORE_OP_REG] <- initial_esi
+l0x98bed6:	shr	eax, 1
+;put_contents[XCORE_OP_REG] <- 452058881
+l0x98bed9:	sub	eax, 0x1ab7450b
+;put_contents[XCORE_OP_REG] <- 3840502
+l0x98bede:	add	eax, 0x7ef04af7
+;put_contents[XCORE_OP_REG] <- 2133517549
+l0x98bee3:	add	eax, 0x80d51b17
+;put_contents[XCORE_OP_REG] <- 4
+l0x98bee8:	add	edi, eax
+;put_contents[XCORE_OP_REG] <- 1048532
+l0x98beea:	push	dword[esp]
+;stack[1048524, 0] ->
+l0x98beed:	pop	eax
+; -> initial_eax
+;put_contents[XCORE_OP_REG] <- initial_eax
+l0x98beee:	push	eax
+l0x98beef:	mov	dword[esp], ebp
+;put_contents[XCORE_OP_MEM] <- 8119845
+;stack[1048520, 0] <-
+l0x98bef2:	mov	ebp, esp
+;put_contents[XCORE_OP_REG] <- 1048520
+l0x98bef4:	add	ebp, 4
+;put_contents[XCORE_OP_REG] <- 1048524
+l0x98befa:	add	ebp, 4
+;put_contents[XCORE_OP_REG] <- 1048528
+l0x98bf00:	xchg	dword[esp], ebp
+;stack[1048520, 0] ->
+;put_contents[XCORE_OP_MEM] <- 1048528
+;stack[1048520, 0] <-
+;put_contents[XCORE_OP_REG] <- 8119845
+l0x98bf03:	mov	esp, dword[esp]
+;stack[1048520, 0] ->
+;put_contents[XCORE_OP_REG] <- 1048528
+l0x98bf06:	sub	edi, 4
+;put_contents[XCORE_OP_REG] <- 1048528
+l0x98bf0c:	push	edi
+l0x98bf0d:	push	dword[esp + 4]
+;stack[1048524, 4] ->
+l0x98bf11:	mov	edi, dword[esp]
+;stack[1048520, 0] ->
+;put_contents[XCORE_OP_REG] <- initial_edi
+l0x98bf14:	add	esp, 4
+;put_contents[XCORE_OP_REG] <- 1048524
+l0x98bf17:	pop	dword[esp]
+; -> 1048528
+;put_contents[XCORE_OP_MEM] <- 1048528
+;stack[1048528, 0] <-
+l0x98bf1a:	mov	esp, dword[esp]
+;stack[1048528, 0] ->
+;put_contents[XCORE_OP_REG] <- 1048528
+l0x98bf1d:	mov	dword[esp], edx
+;put_contents[XCORE_OP_MEM] <- initial_edx
+;stack[1048528, 0] <-
+l0x98bf20:	mov	dword[esp], eax
+;put_contents[XCORE_OP_MEM] <- initial_eax
+;stack[1048528, 0] <-
+l0x98bf23:	mov	dword[esp], ecx
+;put_contents[XCORE_OP_MEM] <- 4194304
+;stack[1048528, 0] <-
+l0x98bf26:	push	esi
+l0x98bf27:	push	0x75d31900
+l0x98bf2c:	push	dword[esp]
+;stack[1048520, 0] ->
+l0x98bf2f:	pop	esi
+; -> 1976768768
+;put_contents[XCORE_OP_REG] <- 1976768768
+l0x98bf30:	add	esp, 4
+;put_contents[XCORE_OP_REG] <- 1048524
+l0x98bf36:	xor	esi, edx
+;do_aritm[]] operator 2: XCORE_OP_REG
+;put_contents[XCORE_OP_REG] <- <tools.AbstractOp object at 0x7f4a9a108da0>
+;abstract operation op1 <- AbstractOp()
+l0x98bf38:	xor	edx, esi
+;do_aritm[]] operator 1: XCORE_OP_REG
+;do_aritm[]] operator 2: XCORE_OP_REG
+;put_contents[XCORE_OP_REG] <- 1976768768
+;abstract operation op1 <- 75d31900
+l0x98bf3a:	xor	esi, edx
+;do_aritm[]] operator 1: XCORE_OP_REG
+;put_contents[XCORE_OP_REG] <- initial_edx
+;abstract operation op1 <- initial_edx
+l0x98bf3c:	xchg	edx, edi
+;put_contents[XCORE_OP_REG] <- initial_edi
+;put_contents[XCORE_OP_REG] <- 1976768768
+l0x98bf3e:	not	edi
+;put_contents[XCORE_OP_REG] <- 2318198527
+l0x98bf40:	push	edx
+l0x98bf41:	push	0x6bdf4692
+l0x98bf46:	mov	dword[esp], edi
+;put_contents[XCORE_OP_MEM] <- 2318198527
+;stack[1048516, 0] <-
+l0x98bf49:	pop	edx
+; -> 2318198527
+;put_contents[XCORE_OP_REG] <- 2318198527
+l0x98bf4a:	pop	edi
+; -> initial_edi
+;put_contents[XCORE_OP_REG] <- initial_edi
+l0x98bf4b:	xor	esi, edx
+;do_aritm[]] operator 1: XCORE_OP_REG
+;put_contents[XCORE_OP_REG] <- <tools.AbstractOp object at 0x7f4a9a118668>
+;abstract operation op1 <- AbstractOp()
+l0x98bf4d:	xor	edx, esi
+;do_aritm[]] operator 2: XCORE_OP_REG
+;put_contents[XCORE_OP_REG] <- initial_edx
+;abstract operation op1 <- initial_edx
+l0x98bf4f:	xor	esi, edx
+;do_aritm[]] operator 1: XCORE_OP_REG
+;do_aritm[]] operator 2: XCORE_OP_REG
+;put_contents[XCORE_OP_REG] <- 2318198527
+;abstract operation op1 <- 8a2ce6ff
+l0x98bf51:	xor	esi, 0x8a2ce6fe
+;put_contents[XCORE_OP_REG] <- 1
+l0x98bf57:	sub	esp, 4
+;put_contents[XCORE_OP_REG] <- 1048520
+l0x98bf5d:	mov	dword[esp], edx
+;put_contents[XCORE_OP_MEM] <- initial_edx
+;stack[1048520, 0] <-
+l0x98bf60:	mov	edx, esi
+;put_contents[XCORE_OP_REG] <- 1
+l0x98bf62:	push	eax
+l0x98bf63:	mov	eax, edx
+;put_contents[XCORE_OP_REG] <- 1
+l0x98bf65:	push	eax
+l0x98bf66:	xor	dword[esp], 0x3aef109e
+;stack[1048512, 0] ->
+;stack[1048512, 0] ->
+;put_contents[XCORE_OP_MEM] <- 988745887
+;stack[1048512, 0] <-
+l0x98bf6d:	pop	ecx
+; -> 988745887
+;put_contents[XCORE_OP_REG] <- 988745887
+l0x98bf6e:	xor	ecx, 0x3aef109e
+;put_contents[XCORE_OP_REG] <- 1
+l0x98bf74:	mov	eax, dword[esp]
+;stack[1048516, 0] ->
+;put_contents[XCORE_OP_REG] <- initial_eax
+l0x98bf77:	add	esp, 4
+;put_contents[XCORE_OP_REG] <- 1048520
+l0x98bf7d:	mov	edx, dword[esp]
+;stack[1048520, 0] ->
+;put_contents[XCORE_OP_REG] <- initial_edx
+l0x98bf80:	add	esp, 4
+;put_contents[XCORE_OP_REG] <- 1048524
+l0x98bf86:	mov	esi, dword[esp]
+;stack[1048524, 0] ->
+;put_contents[XCORE_OP_REG] <- initial_esi
+l0x98bf89:	push	eax
+l0x98bf8a:	push	esp
+l0x98bf8b:	pop	eax
+; -> 1048520
+;put_contents[XCORE_OP_REG] <- 1048520
+l0x98bf8c:	add	eax, 4
+;put_contents[XCORE_OP_REG] <- 1048524
+l0x98bf91:	push	esi
+l0x98bf92:	mov	esi, 4
+;put_contents[XCORE_OP_REG] <- 4
+l0x98bf97:	add	eax, esi
+;put_contents[XCORE_OP_REG] <- 1048528
+l0x98bf99:	pop	esi
+; -> initial_esi
+;put_contents[XCORE_OP_REG] <- initial_esi
+l0x98bf9a:	xor	eax, dword[esp]
+;stack[1048520, 0] ->
+;do_aritm[]] operator 2: XCORE_OP_MEM
+;put_contents[XCORE_OP_REG] <- <tools.AbstractOp object at 0x7f4a9a13b278>
+;abstract operation op1 <- AbstractOp()
+l0x98bf9d:	xor	dword[esp], eax
+;stack[1048520, 0] ->
+;do_aritm[]] operator 1: XCORE_OP_MEM
+;do_aritm[]] operator 2: XCORE_OP_REG
+;put_contents[XCORE_OP_MEM] <- 1048528
+;stack[1048520, 0] <-
+;abstract operation op1 <- fffd0
+l0x98bfa0:	xor	eax, dword[esp]
+;stack[1048520, 0] ->
+;do_aritm[]] operator 1: XCORE_OP_REG
+;put_contents[XCORE_OP_REG] <- initial_eax
+;abstract operation op1 <- initial_eax
+l0x98bfa3:	pop	esp
+; -> 1048528
+;put_contents[XCORE_OP_REG] <- 1048528
+l0x98bfa4:	sub	esp, 4
+;put_contents[XCORE_OP_REG] <- 1048524
+l0x98bfa7:	mov	dword[esp], edx
+;put_contents[XCORE_OP_MEM] <- initial_edx
+;stack[1048524, 0] <-
+l0x98bfaa:	sub	esp, 4
+;put_contents[XCORE_OP_REG] <- 1048520
+l0x98bfad:	mov	dword[esp], eax
+;put_contents[XCORE_OP_MEM] <- initial_eax
+;stack[1048520, 0] <-
+l0x98bfb0:	mov	eax, 0x5fbf8301
+;put_contents[XCORE_OP_REG] <- 1606386433
+l0x98bfb5:	mov	dword[esp + 4], eax
+;put_contents[XCORE_OP_MEM] <- 1606386433
+;stack[1048520, 4] <-
+l0x98bfb9:	pop	eax
+; -> initial_eax
+;put_contents[XCORE_OP_REG] <- initial_eax
+l0x98bfba:	sub	dword[esp], 0x5dffd107
+;stack[1048524, 0] ->
+;stack[1048524, 0] ->
+;put_contents[XCORE_OP_MEM] <- 29340154
+;stack[1048524, 0] <-
+l0x98bfc1:	xchg	dword[esp], ecx
+;stack[1048524, 0] ->
+;put_contents[XCORE_OP_MEM] <- 1
+;stack[1048524, 0] <-
+;put_contents[XCORE_OP_REG] <- 29340154
+l0x98bfc4:	not	ecx
+;put_contents[XCORE_OP_REG] <- 4265627141
+l0x98bfc6:	xchg	dword[esp], ecx
+;stack[1048524, 0] ->
+;put_contents[XCORE_OP_MEM] <- 4265627141
+;stack[1048524, 0] <-
+;put_contents[XCORE_OP_REG] <- 1
+l0x98bfc9:	push	esi
+l0x98bfca:	push	edx
+l0x98bfcb:	push	0x33afe920
+l0x98bfd0:	pop	edx
+; -> 867166496
+;put_contents[XCORE_OP_REG] <- 867166496
+l0x98bfd1:	xor	edx, 0x7cd99cdb
+;put_contents[XCORE_OP_REG] <- 1333163515
+l0x98bfd7:	mov	esi, edx
+;put_contents[XCORE_OP_REG] <- 1333163515
+l0x98bfd9:	pop	edx
+; -> initial_edx
+;put_contents[XCORE_OP_REG] <- initial_edx
+l0x98bfda:	add	dword[esp + 4], esi
+;stack[1048520, 4] ->
+;stack[1048520, 4] ->
+;put_contents[XCORE_OP_MEM] <- 1303823360
+;stack[1048520, 4] <-
+l0x98bfde:	mov	esi, dword[esp]
+;stack[1048520, 0] ->
+;put_contents[XCORE_OP_REG] <- initial_esi
+l0x98bfe1:	add	esp, 4
+;put_contents[XCORE_OP_REG] <- 1048524
+l0x98bfe4:	xor	dword[esp], 0x1fe7e9b2
+;stack[1048524, 0] ->
+;stack[1048524, 0] ->
+;put_contents[XCORE_OP_MEM] <- 1381051826
+;stack[1048524, 0] <-
+l0x98bfeb:	not	dword[esp]
+;stack[1048524, 0] ->
+;stack[1048524, 0] ->
+;put_contents[XCORE_OP_MEM] <- 2913915469
+;stack[1048524, 0] <-
+l0x98bfee:	inc	dword[esp]
+;stack[1048524, 0] ->
+;stack[1048524, 0] ->
+;put_contents[XCORE_OP_MEM] <- 2913915470
+;stack[1048524, 0] <-
+l0x98bff1:	sub	dword[esp], 0xffffffff
+;stack[1048524, 0] ->
+;stack[1048524, 0] ->
+;put_contents[XCORE_OP_MEM] <- 2913915471
+;stack[1048524, 0] <-
+l0x98bff8:	shr	dword[esp], 4
+;stack[1048524, 0] ->
+;stack[1048524, 0] ->
+;put_contents[XCORE_OP_MEM] <- 182119716
+;stack[1048524, 0] <-
+l0x98bffc:	xchg	dword[esp], ebp
+;stack[1048524, 0] ->
+;put_contents[XCORE_OP_MEM] <- 8119845
+;stack[1048524, 0] <-
+;put_contents[XCORE_OP_REG] <- 182119716
+l0x98bfff:	add	ebp, 1
+;put_contents[XCORE_OP_REG] <- 182119717
+l0x98c002:	xchg	dword[esp], ebp
+;stack[1048524, 0] ->
+;put_contents[XCORE_OP_MEM] <- 182119717
+;stack[1048524, 0] <-
+;put_contents[XCORE_OP_REG] <- 8119845
+l0x98c005:	push	edi
+l0x98c006:	mov	edi, 0xf5251327
+;put_contents[XCORE_OP_REG] <- 4112847655
+l0x98c00b:	add	dword[esp + 4], edi
+;stack[1048520, 4] ->
+;stack[1048520, 4] ->
+;put_contents[XCORE_OP_MEM] <- 76
+;stack[1048520, 4] <-
+l0x98c00f:	pop	edi
+; -> initial_edi
+;put_contents[XCORE_OP_REG] <- initial_edi
+l0x98c010:	mov	ebx, dword[esp]
+;stack[1048524, 0] ->
+;put_contents[XCORE_OP_REG] <- 76
+l0x98c013:	push	edi
+l0x98c014:	push	esp
+l0x98c015:	pop	edi
+; -> 1048520
+;put_contents[XCORE_OP_REG] <- 1048520
+l0x98c016:	add	edi, 4
+;put_contents[XCORE_OP_REG] <- 1048524
+l0x98c01c:	push	edx
+l0x98c01d:	mov	edx, 0x53df2ab3
+;put_contents[XCORE_OP_REG] <- 1407134387
+l0x98c022:	shr	edx, 2
+;put_contents[XCORE_OP_REG] <- 351783596
+l0x98c025:	inc	edx
+;put_contents[XCORE_OP_REG] <- 351783597
+l0x98c026:	xor	edx, 0x3bdb02d0
+;put_contents[XCORE_OP_REG] <- 791464061
+l0x98c02c:	and	edx, 0x7fa71958
+;put_contents[XCORE_OP_REG] <- 790890584
+l0x98c032:	shr	edx, 1
+;put_contents[XCORE_OP_REG] <- 395445292
+l0x98c035:	sub	edx, 0x17920428
+;put_contents[XCORE_OP_REG] <- 4
+l0x98c03b:	add	edi, edx
+;put_contents[XCORE_OP_REG] <- 1048528
+l0x98c03d:	pop	edx
+; -> initial_edx
+;put_contents[XCORE_OP_REG] <- initial_edx
+l0x98c03e:	xchg	dword[esp], edi
+;stack[1048520, 0] ->
+;put_contents[XCORE_OP_MEM] <- 1048528
+;stack[1048520, 0] <-
+;put_contents[XCORE_OP_REG] <- initial_edi
+l0x98c041:	pop	esp
+; -> 1048528
+;put_contents[XCORE_OP_REG] <- 1048528
+l0x98c042:	xor	eax, eax
+;do_aritm[]] operator 1: XCORE_OP_REG
+;do_aritm[]] operator 2: XCORE_OP_REG
+;put_contents[XCORE_OP_REG] <- 0
+; abstract operation op1 <- 0
+; l0x98c044:	lock cmpxchg	dword[ebp + ebx], ecx
+; ebp: 7be625
+; ebx: 4c
+; ecx: 1

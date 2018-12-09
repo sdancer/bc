@@ -1,5 +1,7 @@
 import capstone
 from capstone import *
+from tools import *
+
 x = open("blackcipher.aes", "rb").read()
 md = Cs(CS_ARCH_X86, CS_MODE_32)
 md.detail = True
@@ -17,7 +19,9 @@ def value_desc(value):
         return "%x" % value
     if type(value) == type(""):
         return value
-    return "unk: " + TYPES[op.type]
+    if type(value) == AbstractOp:
+        return "AbstractOp()"
+    return "unk: " + TYPES[value.type]
 
 #hate this (?)
 class RegOp:
@@ -36,15 +40,6 @@ def make_int(reg):
 def make_reg(reg):
     return RegOp(reg)
 
-def is_int_value(value):
-    if type(value) == type(0):
-        return True
-    if type(value) == type(""): #probably a initial value
-        return False
-    if value.type == capstone.xcore.XCORE_OP_IMM:
-        return True
-    return False
-
 def has_int_value(context, stack, operator):
     value = fetch_contents(context, stack, operator)
     return is_int_value(value)
@@ -58,7 +53,8 @@ def get_int_value(context, stack, operator):
     raise "doesn't have an int value"
 
 # how to handle sub eax, eax ? here z3 might be good (?)
-def do_aritm(context, stack, operation, op1, op2):
+def do_aritm(context, stack, operations, op1, op2):
+    (realop, abstractop) = operations
     op1v = fetch_contents(context, stack, op1)
     op2v = fetch_contents(context, stack, op2)
     if not(is_int_value(op1v)):
@@ -67,7 +63,7 @@ def do_aritm(context, stack, operation, op1, op2):
         print("#do_aritm[]] operator 2: %s" % (operator_desc(op2),) )
     if is_int_value(op1v) and is_int_value(op2v):
         #computable operations branch
-        val = operation(get_int_value(context, stack, op1), get_int_value(context, stack, op2))
+        val = realop(get_int_value(context, stack, op1), get_int_value(context, stack, op2))
         val &= 0xffffffff
         #changes z/s/c flags?
         if val == 0: #set Z
@@ -76,7 +72,11 @@ def do_aritm(context, stack, operation, op1, op2):
             pass
         put_contents(context, stack, op1, val)
         return "skip"
-    return None #maybe return a stop condition
+    #gotta resolve the real values
+    val = abstractop(op1v, op2v)
+    put_contents(context, stack, op1, val)
+    print("abstract operation op1 <- " + value_desc(val))
+    return "skip" #maybe return a stop condition
 
 #operator to
 # - reg
@@ -129,74 +129,124 @@ def put_contents(context, stack, operator, value):
         if is_valid_stack_ref(context, stack, operator):
             offset = stack_offset(context, stack, operator)
             current_stack_pos = context[capstone.x86.X86_REG_ESP]
-            print("#stack[%u, %u] <- " % (current_stack_pos, offset))
+            print("#stack[%s, %s] <- " % (str(current_stack_pos), str(offset)))
             stack[current_stack_pos + offset] = value
             return None
 
     raise "put_contents type "+str(operator.type)+" not proccessed"
 
+def liftblock(memdata, stack, context, stuff, addresstack, address, max_inst):
+    global blocks
+    for count in range(0,max_inst): #just not infinite
+        if address in addresstack:
+            print("doing address already done")
+            break
+        #
+        #is address valid?
+        y = md.disasm(memdata[address-0x400000:address-0x400000+100], address)
+        #
+        #a fetch one verb should be better, which to use?
+        i = next(y) #since its a generator, gotta store to play
+        proccessed_i = None
+        #
+        #
+        #if not(capstone.x86.X86_GRP_JUMP in i.groups):
+        print("l0x%x:\t%s\t%s" %(address, i.mnemonic, i.op_str.replace(" ptr ", "")))
 
-def tracestuff(memdata, address):
-  global stack, context, stuff
-  count = 0
-  while count < 10000:
-    count += 1
-    #
-    y = md.disasm(memdata[address-0x400000:address-0x400000+100], address)
-    #
-    #a fetch one verb should be better, which to use?
-    i = next(y) #since its a generator, gotta store to play
-    proccessed_i = None
-    #
-    #
-    #if not(capstone.x86.X86_GRP_JUMP in i.groups):
-    print("l0x%x:\t%s\t%s" %(address, i.mnemonic, i.op_str.replace(" ptr ", "")))
-    #
-    #
-    address = address + i.size
-    #
+        addresstack.append(address)
 
+        address = address + i.size
+
+        #what to do with loops?
+
+        if capstone.x86.X86_GRP_CALL in i.groups:
+            if i.operands[0].type == 2:
+                if i.operands[0].imm == address:
+                    #if lifting the block
+                    #need to transform to a push(next address)
+                    #context[capstone.x86.X86_REG_ESP] -= 4
+                    #stack[context[capstone.x86.X86_REG_ESP]] = i.operands[0].imm
+                    #handle as push address
+                    print("#junk call")
+                    proccessed_i = "skip"
+                    skip = True
+            #if constant, fork or follow?
+            if skip == False:
+                proccessed_i = "break"
+        if capstone.x86.X86_GRP_RET in i.groups:
+            #if static, jump
+            proccessed_i = "break"
+        if capstone.x86.X86_GRP_JUMP in i.groups:
+            skip = False
+            if i.mnemonic == "jmp":
+              if i.operands[0].type == 2:
+                if i.operands[0].imm in addresstack:
+                    raise "a loop"
+                else:
+                    skip = True
+                    proccessed_i = "skip"
+                    address = i.operands[0].imm
+            elif i.operands[0].type == 2:
+                if i.operands[0].imm == address:
+                    print("#junk jump")
+                    proccessed_i = "skip"
+                    skip = True
+                #simple trick instead of proper graph work:
+                #when a conditional fork is meet
+                #run a few instructions (5~10) on each branch
+                #see if they collide without side effects
+                else:
+                    print("fork branch")
+                    l = liftblock(memdata, stack.copy(), context.copy(), [], addresstack.copy(), address, 10)
+                    r = liftblock(memdata, stack.copy(), context.copy(), [], addresstack.copy(), i.operands[0].imm, 10)
+                    l = [(a,b) for (a,b) in l if b != "skip"]
+                    r = [(a,b) for (a,b) in r if b != "skip"]
+                    #trim the skips and see if l.first == r.first
+                    (la, l) = next(iter(l), None)
+                    (ra, r) = next(iter(r), None)
+                    print(l)
+                    print(r)
+                    if la == ra:
+                        print("#junk jump")
+                        proccessed_i = "skip"
+                        skip = True
+            #if operand is fixed, add to blocks
+            #will need the flags
+            #copy the conditional instruction
+            #
+
+            if not(skip): #lord free us from this if!
+                # raise "end of the block, unknown jump"
+                # break
+                proccessed_i = "break"
+
+        if proccessed_i == "break":
+            break
+        if proccessed_i == None:
+            proccessed_i = i
+
+        vproc(stack, context, stuff, i, address)
+
+        stuff.append((address, proccessed_i))
+    return stuff
+
+
+def vproc(stack, context, stuff, i, address):
+    #if esp is abstract, execution failed
     if capstone.x86.X86_GRP_CALL in i.groups:
         if i.operands[0].type == 2:
             if i.operands[0].imm == address:
                 #if lifting the block
                 #need to transform to a push(next address)
                 context[capstone.x86.X86_REG_ESP] -= 4
-                stack[context[capstone.x86.X86_REG_ESP]] = i.operands[0].imm
+                stack[context[capstone.x86.X86_REG_ESP]] = address
                 #handle as push address
                 print("#junk call")
                 proccessed_i = "skip"
                 skip = True
         #if constant, fork or follow?
         if skip == False:
-            raise "end of the block, unknown call"
-            break
-    if capstone.x86.X86_GRP_RET in i.groups:
-        #if static, jump
-        raise "end of the block, unknown ret"
-        break
-    if capstone.x86.X86_GRP_JUMP in i.groups:
-        skip = False
-        if i.mnemonic == "jmp":
-          if i.operands[0].type == 2:
-            skip = True
-            proccessed_i = "skip"
-            address = i.operands[0].imm
-        elif i.operands[0].type == 2:
-            if i.operands[0].imm == address:
-                print("#junk jump")
-                proccessed_i = "skip"
-                skip = True
-
-        #if operand is fixed, add to blocks
-        #will need the flags
-        #copy the conditional instruction
-        #
-
-        if not(skip): #lord free us from this if!
-            # raise "end of the block, unknown jump"
-            # break
-            pass #will break for now
+            proccessed_i = "break"
 
     if i.mnemonic == "push":
         #how does push [esp - 0x10] proc in intel ?
@@ -231,6 +281,12 @@ def tracestuff(memdata, address):
         put_contents(context, stack, i.operands[0], value)
 
         proccessed_i = "skip"
+
+    if i.mnemonic == "lock cmpxchg":
+        print("ebp: " + value_desc(context[capstone.x86.X86_REG_EBP]))
+        print("ebx: " + value_desc(context[capstone.x86.X86_REG_EBX]))
+        print("ecx: " + value_desc(context[capstone.x86.X86_REG_ECX]))
+        raise "lock cmpxchg"
 
     if i.mnemonic == "pushal":
         context[capstone.x86.X86_REG_ESP] -= 4 * 8
@@ -279,28 +335,28 @@ def tracestuff(memdata, address):
 
     #latter add a map for clearness
     if i.mnemonic == "neg":
-        proccessed_i = do_aritm(context, stack, aritm_neg, i.operands[0], make_int(0))
+        proccessed_i = do_aritm(context, stack, (aritm_neg, abstract_neg), i.operands[0], make_int(0))
     if i.mnemonic == "not":
-        proccessed_i = do_aritm(context, stack, aritm_not, i.operands[0], make_int(0))
+        proccessed_i = do_aritm(context, stack, (aritm_not, abstract_not), i.operands[0], make_int(0))
 
     if i.mnemonic == "inc":
-        proccessed_i = do_aritm(context, stack, aritm_add, i.operands[0], make_int(1))
+        proccessed_i = do_aritm(context, stack, (aritm_add, abstract_add), i.operands[0], make_int(1))
     if i.mnemonic == "dec":
-        proccessed_i = do_aritm(context, stack, aritm_sub, i.operands[0], make_int(1))
+        proccessed_i = do_aritm(context, stack, (aritm_sub, abstract_sub), i.operands[0], make_int(1))
     if i.mnemonic == "add":
-        proccessed_i = do_aritm(context, stack, aritm_add, i.operands[0], i.operands[1])
+        proccessed_i = do_aritm(context, stack, (aritm_add, abstract_add), i.operands[0], i.operands[1])
     if i.mnemonic == "sub":
-        proccessed_i = do_aritm(context, stack, aritm_sub, i.operands[0], i.operands[1])
+        proccessed_i = do_aritm(context, stack, (aritm_sub, abstract_sub), i.operands[0], i.operands[1])
     if i.mnemonic == "or":
-        proccessed_i = do_aritm(context, stack, aritm_or, i.operands[0], i.operands[1])
+        proccessed_i = do_aritm(context, stack, (aritm_or, abstract_or), i.operands[0], i.operands[1])
     if i.mnemonic == "xor":
-        proccessed_i = do_aritm(context, stack, aritm_xor, i.operands[0], i.operands[1])
+        proccessed_i = do_aritm(context, stack, (aritm_xor, abstract_xor), i.operands[0], i.operands[1])
     if i.mnemonic == "shr":
-        proccessed_i = do_aritm(context, stack, aritm_shr, i.operands[0], i.operands[1])
+        proccessed_i = do_aritm(context, stack, (aritm_shr, abstract_shr), i.operands[0], i.operands[1])
     if i.mnemonic == "shl":
-        proccessed_i = do_aritm(context, stack, aritm_shl, i.operands[0], i.operands[1])
+        proccessed_i = do_aritm(context, stack, (aritm_shl, abstract_shl), i.operands[0], i.operands[1])
     if i.mnemonic == "and":
-        proccessed_i = do_aritm(context, stack, aritm_and, i.operands[0], i.operands[1])
+        proccessed_i = do_aritm(context, stack, (aritm_and, abstract_and), i.operands[0], i.operands[1])
 
     if i.mnemonic == "mul":
         #modifies 2 regs at same time
@@ -309,48 +365,12 @@ def tracestuff(memdata, address):
     if i.mnemonic == "rtdsc":
         pass
 
-    #options
-    #serialize the state up to here and append the instructions
-    #   which is pretty easy
-    #lift SSA, chain of dependency
-    #starts feeling like i need IL,
-    #   which is beyond the scope of the tut :P
-    #for the current pos, xor(a,b b,a a,b)
-    # can read the full block and prefilter these to a xchg
-    # back to the need of an IL :P
-    # the transformation to that xchg isn't clean with
-    # the way the captone bindings are written
+    return None
 
-    if proccessed_i == None:
-        return (stack, context, stuff)
-        proccessed_i = i
-
-    #if don't need to skip it append to it
-    stuff.append((address, proccessed_i))
-
-  return (stack, context, stuff)
 
 #would be nice to have the abstract operations on these too :(
 #but need to read more about functional python programing
 
-def aritm_add(a,b):
-    return a + b
-def aritm_sub(a,b):
-    return a - b
-def aritm_or(a,b):
-    return a | b
-def aritm_xor(a,b):
-    return a ^ b
-def aritm_shl(a,b):
-    return a << b
-def aritm_shr(a,b):
-    return a >> b
-def aritm_and(a,b):
-    return a & b
-def aritm_neg(a,b):
-    return 0 - a
-def aritm_not(a,b):
-    return ~ a
 
 reg_names = {
 capstone.x86.X86_REG_EAX: "EAX",
@@ -388,8 +408,10 @@ context = {
 #what sparse container can use?
 import time
 t = time.time()
-tracestuff(x, 0x1DBF71A)
-tracestuff(x, 0x098B6B4)
+ablock = liftblock(x, stack, context, [], [], 0x1DBF71A, 100000)
+print(ablock)
+#ablock = liftblock(x, 0x098B6B4)
+#print(ablock)
 print(time.time() - t)
 #tracestuff(x, 0x1DBF71A)
 
@@ -431,3 +453,15 @@ but for now any conditional branch will stop the script
 nasm -f elf32 res.asm
 gcc -m32 res.o -o res
 """
+
+#options
+#serialize the state up to here and append the instructions
+#   which is pretty easy
+#lift SSA, chain of dependency
+#starts feeling like i need IL,
+#   which is beyond the scope of the tut :P
+#for the current pos, xor(a,b b,a a,b)
+# can read the full block and prefilter these to a xchg
+# back to the need of an IL :P
+# the transformation to that xchg isn't clean with
+# the way the captone bindings are written
