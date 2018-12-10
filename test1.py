@@ -193,33 +193,38 @@ def liftblock(memdata, stack, context, stuff, addresstack, address, max_inst):
         if capstone.x86.X86_GRP_JUMP in i.groups:
             skip = False
             if i.mnemonic == "jmp":
-              if i.operands[0].type == 2:
-                jmpaddress = i.operands[0].imm
-                if jmpaddress in addresstack:
-                    print("loop was found, are we following a path fork?")
-                    #a loop is detected, split the block
-                    #iterate the list on instructions(stuff)
-                    #find the first occurence of the address
-                    ocur = None
-                    for i in range(0, len(stuff)):
-                        (a,b) = stuff[i]
-                        if a == jmpaddress:
-                            ocur = i
-                    if ocur != None:
-                        print("ocurrence found in instructions")
-                        #trim the list
-                        stuff = stuff[0:ocur]
-                        #put a jmp to new block at that point
-                        stuff.append(Jmp_to_block(jmpaddress))
-                        #append to blocks
-                        if not(jmpaddress in blocks):
-                            blocks[jmpaddress] = None
-                    #if ocur == None, we are following a path fork
-                    break
+                if i.operands[0].type == 2:
+                    jmpaddress = i.operands[0].imm
+                    if jmpaddress in addresstack:
+                        print("loop was found, are we following a path fork?")
+                        #a loop is detected, split the block
+                        #iterate the list on instructions(stuff)
+                        #find the first occurence of the address
+                        ocur = None
+                        for i in range(0, len(stuff)):
+                            (a,b) = stuff[i]
+                            if a == jmpaddress:
+                                ocur = i
+                        if ocur != None:
+                            print("ocurrence found in instructions")
+                            #trim the list
+                            stuff = stuff[0:ocur]
+                            #put a jmp to new block at that point
+                            stuff.append(Jmp_to_block(jmpaddress))
+                            #append to blocks
+                            if not(jmpaddress in blocks):
+                                blocks[jmpaddress] = None
+                        #if ocur == None, we are following a path fork
+                        break
+                    else:
+                        skip = True
+                        proccessed_i = "skip"
+                        address = jmpaddress
                 else:
-                    skip = True
-                    proccessed_i = "skip"
-                    address = jmpaddress
+                    val = fetch_contents(context, stack, i.operands[0])
+                    print(value_desc(val))
+                    print(value_desc(context[capstone.x86.X86_REG_EAX]))
+                    raise "jmp to unknoown location"
             elif i.operands[0].type == 2:
                 jmpaddress = i.operands[0].imm
                 if jmpaddress == address:
