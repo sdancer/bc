@@ -6,7 +6,8 @@ class AbstractOp:
         self.optype = optype
         self.op1 = op1
         self.op2 = op2
-
+    def get_real_img(self):
+        return get_real_img_pair(self.op1, self.op2)
 
 def is_int_value(value):
     if type(value) == type(0):
@@ -76,11 +77,38 @@ def toint32(x):
         return x - 0x100000000
     return x
 
+def get_real_img_pair(a,b):
+    if is_int_value(a):
+        return (a,b)
+    if is_int_value(b):
+        return (b,a)
+    return None #no real value
+
 def abstract_add(a,b):
+    r_i_pair = get_real_img_pair(a,b)
+    if r_i_pair:
+        (real1, img) = r_i_pair
+        if (type(img) is AbstractOp) and (img.optype in ["add", "sub"]):
+            r_i_2 = img.get_real_img()
+            if r_i_2:
+                (real2, img2) = r_i_2
+                if img.optype == "sub":
+                    real2 = -real2
+                return AbstractOp("add", img2, real1 + real2)
     return AbstractOp("add", a, b)
 def abstract_sub(a,b):
     if a == b:
         return 0 #lol
+    r_i_pair = get_real_img_pair(a,b)
+    if r_i_pair:
+        (real1, img) = r_i_pair
+        if (type(img) is AbstractOp) and (img.optype in ["add", "sub"]):
+            r_i_2 = img.get_real_img()
+            if r_i_2:
+                (real2, img2) = r_i_2
+                if img.optype == "add":
+                    real2 = -real2
+                return AbstractOp("sub", img2, real1 + real2)
     return AbstractOp("sub", a, b)
 def abstract_or(a,b):
     return AbstractOp("or", a, b)
@@ -137,6 +165,31 @@ def abstract_neg(a,b):
     return AbstractOp("neg", a, b)
 def abstract_not(a,b):
     return AbstractOp("not", a, b)
+
+
+def value_desc(value):
+    if type(value) == type(0):
+        return "0x%x" % value
+    if type(value) == type(""):
+        return value
+    if type(value) == AbstractOp:
+        return describe_abstract(value)
+    if type(value) == initial_stack_value:
+        return value.desc()
+    return "unk: " + TYPES[value.type]
+
+TYPES = ["INVALID", "XCORE_OP_REG","XCORE_OP_IMM", "XCORE_OP_MEM"]
+def print_operands(i):
+    for op in i.operands:
+        print("type %s" % TYPES[op.type])
+
+def operator_desc(op):
+    return TYPES[op.type]
+
+def describe_abstract(value):
+    if not(type(value) is AbstractOp):
+        raise "wrong value type" #not very functional behavior
+    return "(%s %s %s)" % (value.optype, value_desc(value.op1), value_desc(value.op2))
 
 class Jmp_to_block:
     def __init__(self, to_address):

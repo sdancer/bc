@@ -8,25 +8,6 @@ x = open("blackcipher.aes", "rb").read()
 md = Cs(CS_ARCH_X86, CS_MODE_32)
 md.detail = True
 
-TYPES = ["INVALID", "XCORE_OP_REG","XCORE_OP_IMM", "XCORE_OP_MEM"]
-def print_operands(i):
-    for op in i.operands:
-        print("type %s" % TYPES[op.type])
-
-def operator_desc(op):
-    return TYPES[op.type]
-
-def value_desc(value):
-    if type(value) == type(0):
-        return "0x%x" % value
-    if type(value) == type(""):
-        return value
-    if type(value) == AbstractOp:
-        return "AbstractOp()"
-    if type(value) == initial_stack_value:
-        return value.desc()
-    return "unk: " + TYPES[value.type]
-
 #hate this (?)
 class RegOp:
     type = capstone.xcore.XCORE_OP_REG
