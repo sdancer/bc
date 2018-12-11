@@ -2,6 +2,8 @@ import capstone
 from capstone import *
 from tools import *
 
+initial_stack_pos = 1024 * 1024
+
 x = open("blackcipher.aes", "rb").read()
 md = Cs(CS_ARCH_X86, CS_MODE_32)
 md.detail = True
@@ -16,11 +18,13 @@ def operator_desc(op):
 
 def value_desc(value):
     if type(value) == type(0):
-        return "%x" % value
+        return "0x%x" % value
     if type(value) == type(""):
         return value
     if type(value) == AbstractOp:
         return "AbstractOp()"
+    if type(value) == initial_stack_value:
+        return value.desc()
     return "unk: " + TYPES[value.type]
 
 #hate this (?)
@@ -97,6 +101,8 @@ def stack_offset(context, stack, operator):
 
 def fetch_contents(context, stack, operator):
     if operator.type == capstone.xcore.XCORE_OP_REG:
+        if context[operator.reg] == None:
+            raise "invalid contents"
         return context[operator.reg]
     if operator.type == capstone.xcore.XCORE_OP_IMM:
         return operator.imm
@@ -105,9 +111,14 @@ def fetch_contents(context, stack, operator):
             offset = stack_offset(context, stack, operator)
             current_stack_pos = context[capstone.x86.X86_REG_ESP]
             print("#stack[%u, %u] -> " % (current_stack_pos, offset))
+            if not((current_stack_pos + offset) in stack):
+                return initial_stack_value(current_stack_pos + offset - initial_stack_pos)
             return stack[current_stack_pos + offset]
+        print("fetch_contents type "+str(operator)+" not proccessed")
+        return operator
         raise "unknown should be a type"
-    raise "fetch_contents type "+str(operator.type)+" not proccessed"
+    print("fetch_contents type "+str(operator)+" not proccessed")
+    return operator
 
 def is_valid_stack_ref(context, stack, operator):
     #for now ESP + REG * scale + disp
@@ -122,6 +133,8 @@ def is_valid_stack_ref(context, stack, operator):
 def put_contents(context, stack, operator, value):
     #print(str(operator) + " <- " + str(value))
     print("#put_contents[%s] <- %s" % (operator_desc(operator), str(value)))
+    if value == None:
+        raise "invalid value in put contents"
     if operator.type == capstone.x86.X86_OP_REG:
         context[operator.reg] = value
         return None
@@ -132,7 +145,7 @@ def put_contents(context, stack, operator, value):
             print("#stack[%s, %s] <- " % (str(current_stack_pos), str(offset)))
             stack[current_stack_pos + offset] = value
             return None
-
+        return "is_mem_write"
     raise "put_contents type "+str(operator.type)+" not proccessed"
 
 def liftblock(memdata, stack, context, stuff, addresstack, address, max_inst):
@@ -155,6 +168,7 @@ def liftblock(memdata, stack, context, stuff, addresstack, address, max_inst):
 
         addresstack.append(address)
 
+        inst_address = address
         address = address + i.size
 
         #what to do with loops?
@@ -179,15 +193,41 @@ def liftblock(memdata, stack, context, stuff, addresstack, address, max_inst):
         if capstone.x86.X86_GRP_JUMP in i.groups:
             skip = False
             if i.mnemonic == "jmp":
-              if i.operands[0].type == 2:
-                if i.operands[0].imm in addresstack:
-                    raise "a loop"
+                if i.operands[0].type == 2:
+                    jmpaddress = i.operands[0].imm
+                    if jmpaddress in addresstack:
+                        print("loop was found, are we following a path fork?")
+                        #a loop is detected, split the block
+                        #iterate the list on instructions(stuff)
+                        #find the first occurence of the address
+                        ocur = None
+                        for i in range(0, len(stuff)):
+                            (a,b) = stuff[i]
+                            if a == jmpaddress:
+                                ocur = i
+                        if ocur != None:
+                            print("ocurrence found in instructions")
+                            #trim the list
+                            stuff = stuff[0:ocur]
+                            #put a jmp to new block at that point
+                            stuff.append(Jmp_to_block(jmpaddress))
+                            #append to blocks
+                            if not(jmpaddress in blocks):
+                                blocks[jmpaddress] = None
+                        #if ocur == None, we are following a path fork
+                        break
+                    else:
+                        skip = True
+                        proccessed_i = "skip"
+                        address = jmpaddress
                 else:
-                    skip = True
-                    proccessed_i = "skip"
-                    address = i.operands[0].imm
+                    val = fetch_contents(context, stack, i.operands[0])
+                    print(value_desc(val))
+                    print(value_desc(context[capstone.x86.X86_REG_EAX]))
+                    raise "jmp to unknoown location"
             elif i.operands[0].type == 2:
-                if i.operands[0].imm == address:
+                jmpaddress = i.operands[0].imm
+                if jmpaddress == address:
                     print("#junk jump")
                     proccessed_i = "skip"
                     skip = True
@@ -210,6 +250,14 @@ def liftblock(memdata, stack, context, stuff, addresstack, address, max_inst):
                         print("#junk jump")
                         proccessed_i = "skip"
                         skip = True
+                    else:
+                        #conditional_jump
+                        if not(jmpaddress in blocks):
+                            blocks[jmpaddress] = None
+                        #need wall flags if
+                        skip = True
+                        proccessed_i = i
+
             #if operand is fixed, add to blocks
             #will need the flags
             #copy the conditional instruction
@@ -221,17 +269,19 @@ def liftblock(memdata, stack, context, stuff, addresstack, address, max_inst):
                 proccessed_i = "break"
 
         if proccessed_i == "break":
+            print("break issued at %x" % (inst_address))
             break
         if proccessed_i == None:
             proccessed_i = i
 
-        vproc(stack, context, stuff, i, address)
+        vproc(stack, context, i, address)
 
-        stuff.append((address, proccessed_i))
+        stuff.append((inst_address, proccessed_i))
     return stuff
 
 
-def vproc(stack, context, stuff, i, address):
+def vproc(stack, context, i, address):
+    proccessed_i = None
     #if esp is abstract, execution failed
     if capstone.x86.X86_GRP_CALL in i.groups:
         if i.operands[0].type == 2:
@@ -241,12 +291,7 @@ def vproc(stack, context, stuff, i, address):
                 context[capstone.x86.X86_REG_ESP] -= 4
                 stack[context[capstone.x86.X86_REG_ESP]] = address
                 #handle as push address
-                print("#junk call")
                 proccessed_i = "skip"
-                skip = True
-        #if constant, fork or follow?
-        if skip == False:
-            proccessed_i = "break"
 
     if i.mnemonic == "push":
         #how does push [esp - 0x10] proc in intel ?
@@ -256,6 +301,7 @@ def vproc(stack, context, stuff, i, address):
         context[capstone.x86.X86_REG_ESP] -= 4
         current_stack_pos = context[capstone.x86.X86_REG_ESP]
 
+        #use put contents for this too
         stack[current_stack_pos] = value
         proccessed_i = "skip"
 
@@ -282,11 +328,11 @@ def vproc(stack, context, stuff, i, address):
 
         proccessed_i = "skip"
 
-    if i.mnemonic == "lock cmpxchg":
-        print("ebp: " + value_desc(context[capstone.x86.X86_REG_EBP]))
-        print("ebx: " + value_desc(context[capstone.x86.X86_REG_EBX]))
-        print("ecx: " + value_desc(context[capstone.x86.X86_REG_ECX]))
-        raise "lock cmpxchg"
+    # if i.mnemonic == "lock cmpxchg":
+    #     print("ebp: " + value_desc(context[capstone.x86.X86_REG_EBP]))
+    #     print("ebx: " + value_desc(context[capstone.x86.X86_REG_EBX]))
+    #     print("ecx: " + value_desc(context[capstone.x86.X86_REG_ECX]))
+    #     raise "lock cmpxchg"
 
     if i.mnemonic == "pushal":
         context[capstone.x86.X86_REG_ESP] -= 4 * 8
@@ -323,8 +369,13 @@ def vproc(stack, context, stuff, i, address):
         #add a fetch in container function
         #add a put in container function
         value = fetch_contents(context, stack, i.operands[1])
-        put_contents(context, stack, i.operands[0], value)
-        proccessed_i = "skip"
+        ret = put_contents(context, stack, i.operands[0], value)
+        if ret == "is_mem_write":
+            #if failed, emit a side effect wall for the registers used
+            print("walling")
+            proccessed_i = Wall_side_effects(i)
+        else:
+            proccessed_i = "skip"
 
     if i.mnemonic == "xchg":
         value0 = fetch_contents(context, stack, i.operands[0])
@@ -365,66 +416,85 @@ def vproc(stack, context, stuff, i, address):
     if i.mnemonic == "rtdsc":
         pass
 
-    return None
+    return proccessed_i
 
 
 #would be nice to have the abstract operations on these too :(
 #but need to read more about functional python programing
 
-
-reg_names = {
-capstone.x86.X86_REG_EAX: "EAX",
-capstone.x86.X86_REG_EBP: "EBP",
-capstone.x86.X86_REG_EBX: "EBX",
-capstone.x86.X86_REG_ECX: "ECX",
-capstone.x86.X86_REG_EDI: "EDI",
-capstone.x86.X86_REG_EDX: "EDX",
-capstone.x86.X86_REG_EFLAGS: "EFLAGS",
-capstone.x86.X86_REG_EIP: "EIP",
-capstone.x86.X86_REG_EIZ: "EIZ",
-capstone.x86.X86_REG_ES: "ES",
-capstone.x86.X86_REG_ESI: "ESI",
-capstone.x86.X86_REG_ESP: "ESP",
-}
-
-stack = [None] * 2048 * 1024 #maybe initialize a range of initial_stack above esp
-      #not 0, bcoz 0 might be a number in the future (?)
-      #wish had atoms, what is the equivalent, that isn't strings or constants?
-stuff = []
-initial_stack_pos = 1024 * 1024
-context = {
-  capstone.x86.X86_REG_EAX: "initial_eax",
-  capstone.x86.X86_REG_EBX: "initial_ebx",
-  capstone.x86.X86_REG_ECX: "initial_ecx",
-  capstone.x86.X86_REG_EDX: "initial_edx",
-  capstone.x86.X86_REG_ESI: "initial_esi",
-  capstone.x86.X86_REG_EDI: "initial_edi",
-  capstone.x86.X86_REG_EBP: "initial_ebp",
-  #named tuples or whatever?
-  capstone.x86.X86_REG_ESP: initial_stack_pos,
-  "flags": "initial_flags" #gotta decompose in each flag
-}
+blocks = {}
 
 #what sparse container can use?
 import time
 t = time.time()
-ablock = liftblock(x, stack, context, [], [], 0x1DBF71A, 100000)
-print(ablock)
+blocks[0x1DBF71A] = None
+while True:
+    #stack = [None] * 2048 * 1024 #maybe initialize a range of initial_stack above esp
+    stack = {}
+    context = new_context(initial_stack_pos)
+    #find a block that is None
+    block_addr = None
+    for b in blocks:
+        if blocks[b] == None:
+            block_addr = b
+            break
+    if block_addr == None:
+        print("nothing more to lift")
+        break;
+    print(";###################################################")
+    ablock = liftblock(x, stack, context, [], [], block_addr, 100000)
+    blocks[block_addr] = ablock
+
+def effects(f, context, stack):
+    esp_diff = context[capstone.x86.X86_REG_ESP] - initial_stack_pos
+    print("\t;esp diff: %x" % esp_diff, file=f)
+    print("\tadd esp, %d" % esp_diff, file=f)
+    #trim the stack changes above esp
+    for i in stack:
+        if i >= context[capstone.x86.X86_REG_ESP]:
+            print("\t;%x %s" % (i, value_desc(stack[i])), file=f)
+            print("\tmov [esp + 0x%x], %s" % (i - context[capstone.x86.X86_REG_ESP], value_desc(stack[i])), file=f)
+        else:
+            print("\t;%x %s" % (i, value_desc(stack[i])), file=f)
+
+    for reg in context:
+        name = str(reg) if not(reg in reg_names) else reg_names[reg]
+        print("\t" + name + " = " + value_desc(context[reg]), file=f)
+
+def compile_block(f, block):
+    stack = {}
+    context = new_context(initial_stack_pos)
+    for inst in block:
+        if type(inst) is tuple:
+            (address,b) = inst
+            if b != "skip":
+                proccessed_i = vproc(stack, context, b, address)
+                if proccessed_i != None:
+                    b = proccessed_i
+            if b == None:
+                raise "wtf none? %x" % address
+            if type(b) is capstone.CsInsn:
+                effects(f, context, stack)
+                print("\t;%x" % address + " " + str(b), file=f)
+                print("\t" + b.mnemonic, b.op_str.replace(" ptr ", ""), file=f)
+            elif b != "skip":
+                print("\t;%x" % address + " " + str(b), file=f)
+        else:
+            effects(f, context, stack)
+            print("\t" + inst.compile_to_asm(), file=f)
+            #b = inst
+
+f = open("out.asm", "w")
+for block in blocks:
+    print("block %x" % block)
+    print("block_%x:" % block, file=f)
+    compile_block(f, blocks[block])
+f.close()
+#print(ablock)
 #ablock = liftblock(x, 0x098B6B4)
 #print(ablock)
 print(time.time() - t)
 #tracestuff(x, 0x1DBF71A)
-
-esp_diff = (1024 * 1024 - context[capstone.x86.X86_REG_ESP])
-print("esp diff: %x" % esp_diff)
-for i in range(0, int(esp_diff/4)):
-    print("%s" % (value_desc(stack[context[capstone.x86.X86_REG_ESP] + i * 4])))
-
-for reg in context:
-    name = str(reg) if not(reg in reg_names) else reg_names[reg]
-    print(name + " = " + value_desc(context[reg]))
-less_stuff = [(a,b) for (a,b) in stuff if b != "skip"]
-print(less_stuff)
 
 # expected output so far
 # eax            0xf7f88d88          -134705784
