@@ -1,5 +1,7 @@
 import capstone
 from capstone import *
+from capstone.x86_const import *
+from capstone.xcore_const import *
 from tools import *
 
 initial_stack_pos = 1024 * 1024
@@ -10,12 +12,12 @@ md.detail = True
 
 #hate this (?)
 class RegOp:
-    type = capstone.xcore.XCORE_OP_REG
+    type = XCORE_OP_REG
     def __init__(self, ireg):
         self.reg = ireg
 
 class IntOp:
-    type = capstone.xcore.XCORE_OP_IMM
+    type = XCORE_OP_IMM
     def __init__(self, ival):
         self.imm = ival
 
@@ -33,7 +35,7 @@ def get_int_value(context, stack, operator):
     contents = fetch_contents(context, stack, operator)
     if type(contents) == type(0):
         return contents
-    if contents.type == capstone.xcore.XCORE_OP_IMM:
+    if contents.type == XCORE_OP_IMM:
         return contents.imm
     raise "doesn't have an int value"
 
@@ -81,16 +83,16 @@ def stack_offset(context, stack, operator):
     return offset
 
 def fetch_contents(context, stack, operator):
-    if operator.type == capstone.xcore.XCORE_OP_REG:
+    if operator.type == XCORE_OP_REG:
         if context[operator.reg] == None:
             raise "invalid contents"
         return context[operator.reg]
-    if operator.type == capstone.xcore.XCORE_OP_IMM:
+    if operator.type == XCORE_OP_IMM:
         return operator.imm
-    if operator.type == capstone.xcore.XCORE_OP_MEM:
+    if operator.type == XCORE_OP_MEM:
         if is_valid_stack_ref(context, stack, operator):
             offset = stack_offset(context, stack, operator)
-            current_stack_pos = context[capstone.x86.X86_REG_ESP]
+            current_stack_pos = context[X86_REG_ESP]
             print("#stack[%u, %u] -> " % (current_stack_pos, offset))
             if not((current_stack_pos + offset) in stack):
                 return initial_stack_value(current_stack_pos + offset - initial_stack_pos)
@@ -105,7 +107,7 @@ def is_valid_stack_ref(context, stack, operator):
     #for now ESP + REG * scale + disp
     #another option is base + esp * 1 + disp (not handled yet)
     valid = (operator.mem.segment == 0) #segment should be 0
-    valid &= operator.mem.base == capstone.x86.X86_REG_ESP #base should be esp
+    valid &= operator.mem.base == X86_REG_ESP #base should be esp
     valid &= (operator.mem.index == 0) or has_int_value(context, stack, make_reg(operator.mem.index))
     return valid
 
@@ -116,13 +118,13 @@ def put_contents(context, stack, operator, value):
     print("#put_contents[%s] <- %s" % (operator_desc(operator), str(value)))
     if value == None:
         raise "invalid value in put contents"
-    if operator.type == capstone.x86.X86_OP_REG:
+    if operator.type == X86_OP_REG:
         context[operator.reg] = value
         return None
-    if operator.type == capstone.x86.X86_OP_MEM:
+    if operator.type == X86_OP_MEM:
         if is_valid_stack_ref(context, stack, operator):
             offset = stack_offset(context, stack, operator)
-            current_stack_pos = context[capstone.x86.X86_REG_ESP]
+            current_stack_pos = context[X86_REG_ESP]
             print("#stack[%s, %s] <- " % (str(current_stack_pos), str(offset)))
             stack[current_stack_pos + offset] = value
             return None
@@ -144,7 +146,7 @@ def liftblock(memdata, stack, context, stuff, addresstack, address, max_inst):
         proccessed_i = None
         #
         #
-        #if not(capstone.x86.X86_GRP_JUMP in i.groups):
+        #if not(X86_GRP_JUMP in i.groups):
         print("l0x%x:\t%s\t%s" %(address, i.mnemonic, i.op_str.replace(" ptr ", "")))
 
         addresstack.append(address)
@@ -154,13 +156,13 @@ def liftblock(memdata, stack, context, stuff, addresstack, address, max_inst):
 
         #what to do with loops?
 
-        if capstone.x86.X86_GRP_CALL in i.groups:
-            if i.operands[0].type == 2:
+        if X86_GRP_CALL in i.groups:
+            if i.operands[0].type == X86_OP_IMM:
                 if i.operands[0].imm == address:
                     #if lifting the block
                     #need to transform to a push(next address)
-                    #context[capstone.x86.X86_REG_ESP] -= 4
-                    #stack[context[capstone.x86.X86_REG_ESP]] = i.operands[0].imm
+                    #context[X86_REG_ESP] -= 4
+                    #stack[context[X86_REG_ESP]] = i.operands[0].imm
                     #handle as push address
                     print("#junk call")
                     proccessed_i = "skip"
@@ -168,13 +170,13 @@ def liftblock(memdata, stack, context, stuff, addresstack, address, max_inst):
             #if constant, fork or follow?
             if skip == False:
                 proccessed_i = "break"
-        if capstone.x86.X86_GRP_RET in i.groups:
+        if X86_GRP_RET in i.groups:
             #if static, jump
             proccessed_i = "break"
-        if capstone.x86.X86_GRP_JUMP in i.groups:
+        if X86_GRP_JUMP in i.groups:
             skip = False
             if i.mnemonic == "jmp":
-                if i.operands[0].type == 2:
+                if i.operands[0].type == X86_OP_IMM:
                     jmpaddress = i.operands[0].imm
                     if jmpaddress in addresstack:
                         print("loop was found, are we following a path fork?")
@@ -204,9 +206,9 @@ def liftblock(memdata, stack, context, stuff, addresstack, address, max_inst):
                 else:
                     val = fetch_contents(context, stack, i.operands[0])
                     print(value_desc(val))
-                    print(value_desc(context[capstone.x86.X86_REG_EAX]))
+                    print(value_desc(context[X86_REG_EAX]))
                     raise "jmp to unknoown location"
-            elif i.operands[0].type == 2:
+            elif i.operands[0].type == X86_OP_IMM:
                 jmpaddress = i.operands[0].imm
                 if jmpaddress == address:
                     print("#junk jump")
@@ -264,13 +266,13 @@ def liftblock(memdata, stack, context, stuff, addresstack, address, max_inst):
 def vproc(stack, context, i, address):
     proccessed_i = None
     #if esp is abstract, execution failed
-    if capstone.x86.X86_GRP_CALL in i.groups:
-        if i.operands[0].type == 2:
+    if X86_GRP_CALL in i.groups:
+        if i.operands[0].type == X86_OP_IMM:
             if i.operands[0].imm == address:
                 #if lifting the block
                 #need to transform to a push(next address)
-                context[capstone.x86.X86_REG_ESP] -= 4
-                stack[context[capstone.x86.X86_REG_ESP]] = address
+                context[X86_REG_ESP] -= 4
+                stack[context[X86_REG_ESP]] = address
                 #handle as push address
                 proccessed_i = "skip"
 
@@ -279,8 +281,8 @@ def vproc(stack, context, i, address):
         value = fetch_contents(context, stack, i.operands[0])
 
         #ESP = ESP - 4;
-        context[capstone.x86.X86_REG_ESP] -= 4
-        current_stack_pos = context[capstone.x86.X86_REG_ESP]
+        context[X86_REG_ESP] -= 4
+        current_stack_pos = context[X86_REG_ESP]
 
         #use put contents for this too
         stack[current_stack_pos] = value
@@ -289,59 +291,59 @@ def vproc(stack, context, i, address):
     if i.mnemonic == "pushfd":
         #gotta deduplicate code (?)
         #ESP = ESP - 4;
-        context[capstone.x86.X86_REG_ESP] -= 4
+        context[X86_REG_ESP] -= 4
 
-        stack[context[capstone.x86.X86_REG_ESP]] = context["flags"]
+        stack[context[X86_REG_ESP]] = context["flags"]
         #SS:ESP = Source //push doubleword
         print("# <- " + str(context["flags"]))
         proccessed_i = "skip"
 
     if i.mnemonic == "pop":
-        current_stack_pos = context[capstone.x86.X86_REG_ESP]
+        current_stack_pos = context[X86_REG_ESP]
 
         value = stack[current_stack_pos]
         print("# -> " + str(value))
 
         #ESP = ESP + 4;
-        context[capstone.x86.X86_REG_ESP] += 4
+        context[X86_REG_ESP] += 4
 
         put_contents(context, stack, i.operands[0], value)
 
         proccessed_i = "skip"
 
     # if i.mnemonic == "lock cmpxchg":
-    #     print("ebp: " + value_desc(context[capstone.x86.X86_REG_EBP]))
-    #     print("ebx: " + value_desc(context[capstone.x86.X86_REG_EBX]))
-    #     print("ecx: " + value_desc(context[capstone.x86.X86_REG_ECX]))
+    #     print("ebp: " + value_desc(context[X86_REG_EBP]))
+    #     print("ebx: " + value_desc(context[X86_REG_EBX]))
+    #     print("ecx: " + value_desc(context[X86_REG_ECX]))
     #     raise "lock cmpxchg"
 
     if i.mnemonic == "pushal":
-        context[capstone.x86.X86_REG_ESP] -= 4 * 8
+        context[X86_REG_ESP] -= 4 * 8
 
         #temp = esp_val
-        stack[context[capstone.x86.X86_REG_ESP]] = context[capstone.x86.X86_REG_EAX]
-        stack[context[capstone.x86.X86_REG_ESP]+4] = context[capstone.x86.X86_REG_ECX];
-        stack[context[capstone.x86.X86_REG_ESP]+8] = context[capstone.x86.X86_REG_EDX];
-        stack[context[capstone.x86.X86_REG_ESP]+12] = context[capstone.x86.X86_REG_EBX];
-        stack[context[capstone.x86.X86_REG_ESP]+16] = "crash_if_read, original esp + offset, from pushal"
-        stack[context[capstone.x86.X86_REG_ESP]+20] = context[capstone.x86.X86_REG_EBP];
-        stack[context[capstone.x86.X86_REG_ESP]+24] = context[capstone.x86.X86_REG_ESI];
-        stack[context[capstone.x86.X86_REG_ESP]+28] = context[capstone.x86.X86_REG_EDI];
+        stack[context[X86_REG_ESP]] = context[X86_REG_EAX]
+        stack[context[X86_REG_ESP]+4] = context[X86_REG_ECX];
+        stack[context[X86_REG_ESP]+8] = context[X86_REG_EDX];
+        stack[context[X86_REG_ESP]+12] = context[X86_REG_EBX];
+        stack[context[X86_REG_ESP]+16] = "crash_if_read, original esp + offset, from pushal"
+        stack[context[X86_REG_ESP]+20] = context[X86_REG_EBP];
+        stack[context[X86_REG_ESP]+24] = context[X86_REG_ESI];
+        stack[context[X86_REG_ESP]+28] = context[X86_REG_EDI];
         proccessed_i = "skip"
 
     if i.mnemonic == "popal":
-        context[capstone.x86.X86_REG_EAX] = stack[context[capstone.x86.X86_REG_ESP]]
-        context[capstone.x86.X86_REG_ECX] = stack[context[capstone.x86.X86_REG_ESP]+4];
-        context[capstone.x86.X86_REG_EDX] = stack[context[capstone.x86.X86_REG_ESP]+8];
-        context[capstone.x86.X86_REG_EBX] = stack[context[capstone.x86.X86_REG_ESP]+12];
-        #stack[context[capstone.x86.X86_REG_ESP]+16] = "crash_if_read, original esp + offset, from pushal"
+        context[X86_REG_EAX] = stack[context[X86_REG_ESP]]
+        context[X86_REG_ECX] = stack[context[X86_REG_ESP]+4];
+        context[X86_REG_EDX] = stack[context[X86_REG_ESP]+8];
+        context[X86_REG_EBX] = stack[context[X86_REG_ESP]+12];
+        #stack[context[X86_REG_ESP]+16] = "crash_if_read, original esp + offset, from pushal"
         #can this instruction be used to rebase the ESP ?
         # life is hard!
-        context[capstone.x86.X86_REG_EBP] = stack[context[capstone.x86.X86_REG_ESP]+20];
-        context[capstone.x86.X86_REG_ESI] = stack[context[capstone.x86.X86_REG_ESP]+24];
-        context[capstone.x86.X86_REG_EDI] = stack[context[capstone.x86.X86_REG_ESP]+28];
+        context[X86_REG_EBP] = stack[context[X86_REG_ESP]+20];
+        context[X86_REG_ESI] = stack[context[X86_REG_ESP]+24];
+        context[X86_REG_EDI] = stack[context[X86_REG_ESP]+28];
 
-        context[capstone.x86.X86_REG_ESP] += 4 * 8
+        context[X86_REG_ESP] += 4 * 8
 
         #temp = esp_val
         proccessed_i = "skip"
@@ -427,14 +429,14 @@ while True:
     blocks[block_addr] = ablock
 
 def effects(f, context, stack):
-    esp_diff = context[capstone.x86.X86_REG_ESP] - initial_stack_pos
+    esp_diff = context[X86_REG_ESP] - initial_stack_pos
     print("\t;esp diff: %x" % esp_diff, file=f)
     print("\tadd esp, %d" % esp_diff, file=f)
     #trim the stack changes above esp
     for i in stack:
-        if i >= context[capstone.x86.X86_REG_ESP]:
+        if i >= context[X86_REG_ESP]:
             print("\t;%x %s" % (i, value_desc(stack[i])), file=f)
-            print("\tmov [esp + 0x%x], %s" % (i - context[capstone.x86.X86_REG_ESP], value_desc(stack[i])), file=f)
+            print("\tmov [esp + 0x%x], %s" % (i - context[X86_REG_ESP], value_desc(stack[i])), file=f)
         else:
             print("\t;%x %s" % (i, value_desc(stack[i])), file=f)
 
