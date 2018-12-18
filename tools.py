@@ -12,7 +12,7 @@ class AbstractOp:
 def is_int_value(value):
     if type(value) == type(0):
         return True
-    if type(value) == type(""): #probably a initial value
+    if type(value) == InitialReg: #probably a initial value
         return False
     if type(value) == AbstractOp: #probably a initial value
         return False
@@ -176,6 +176,8 @@ def value_desc(value):
         return describe_abstract(value)
     if type(value) == initial_stack_value:
         return value.desc()
+    if type(value) == InitialReg:
+        return str(value)
     return "unk: " + TYPES[value.type]
 
 TYPES = ["INVALID", "XCORE_OP_REG","XCORE_OP_IMM", "XCORE_OP_MEM"]
@@ -209,15 +211,21 @@ class initial_stack_value:
     def desc(self):
         return "initial_stack_value(%x)" % (self.pos)
 
+class InitialReg():
+    def __init__(self, reg):
+        self.reg = reg
+    def __str__(self):
+     return "initial_%s" % (reg_names[self.reg],)
+
 def new_context(initial_stack_pos):
     return {
-      capstone.x86.X86_REG_EAX: "initial_eax",
-      capstone.x86.X86_REG_EBX: "initial_ebx",
-      capstone.x86.X86_REG_ECX: "initial_ecx",
-      capstone.x86.X86_REG_EDX: "initial_edx",
-      capstone.x86.X86_REG_ESI: "initial_esi",
-      capstone.x86.X86_REG_EDI: "initial_edi",
-      capstone.x86.X86_REG_EBP: "initial_ebp",
+      capstone.x86.X86_REG_EAX: InitialReg(capstone.x86.X86_REG_EAX),
+      capstone.x86.X86_REG_EBX: InitialReg(capstone.x86.X86_REG_EBX),
+      capstone.x86.X86_REG_ECX: InitialReg(capstone.x86.X86_REG_ECX),
+      capstone.x86.X86_REG_EDX: InitialReg(capstone.x86.X86_REG_EDX),
+      capstone.x86.X86_REG_ESI: InitialReg(capstone.x86.X86_REG_ESI),
+      capstone.x86.X86_REG_EDI: InitialReg(capstone.x86.X86_REG_EDI),
+      capstone.x86.X86_REG_EBP: InitialReg(capstone.x86.X86_REG_EBP),
       #named tuples or whatever?
       capstone.x86.X86_REG_ESP: initial_stack_pos,
       "flags": "initial_flags" #gotta decompose in each flag

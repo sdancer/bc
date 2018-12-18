@@ -129,8 +129,9 @@ def put_contents(context, stack, operator, value):
         return "is_mem_write"
     raise "put_contents type "+str(operator.type)+" not proccessed"
 
-def liftblock(memdata, stack, context, stuff, addresstack, address, max_inst):
+def liftblock(memdata, stack, context, stuff, addresstack, init_address, max_inst):
     global blocks
+    address = init_address
     for count in range(0,max_inst): #just not infinite
         if address in addresstack:
             print("doing address already done")
@@ -176,27 +177,28 @@ def liftblock(memdata, stack, context, stuff, addresstack, address, max_inst):
             if i.mnemonic == "jmp":
                 if i.operands[0].type == 2:
                     jmpaddress = i.operands[0].imm
-                    if jmpaddress in addresstack:
-                        print("loop was found, are we following a path fork?")
-                        #a loop is detected, split the block
-                        #iterate the list on instructions(stuff)
-                        #find the first occurence of the address
-                        ocur = None
-                        for i in range(0, len(stuff)):
-                            (a,b) = stuff[i]
-                            if a == jmpaddress:
-                                ocur = i
-                        if ocur != None:
-                            print("ocurrence found in instructions")
-                            #trim the list
-                            stuff = stuff[0:ocur]
-                            #put a jmp to new block at that point
-                            stuff.append(Jmp_to_block(jmpaddress))
+                    if (jmpaddress in addresstack):
+                        if (jmpaddress != init_address):
+                            print("loop was found, are we following a path fork?")
+                            #a loop is detected, split the block
+                            #iterate the list on instructions(stuff)
+                            #find the first occurence of the address
+                            ocur = None
+                            for i in range(0, len(stuff)):
+                                (a,b) = stuff[i]
+                                if a == address:
+                                    ocur = i
+                            if ocur != None:
+                                print("ocurrence found in instructions")
+                                #trim the list
+                                stuff = stuff[0:ocur]
+                                #put a jmp to new block at that point
+                            stuff.append((inst_address, Jmp_to_block(jmpaddress)))
                             #append to blocks
                             if not(jmpaddress in blocks):
                                 blocks[jmpaddress] = None
-                        #if ocur == None, we are following a path fork
-                        break
+                            #if ocur == None, we are following a path fork
+                            break
                     else:
                         skip = True
                         proccessed_i = "skip"
@@ -205,7 +207,7 @@ def liftblock(memdata, stack, context, stuff, addresstack, address, max_inst):
                     val = fetch_contents(context, stack, i.operands[0])
                     print(value_desc(val))
                     print(value_desc(context[capstone.x86.X86_REG_EAX]))
-                    raise "jmp to unknoown location"
+                    #raise "jmp to unknoown location"
             elif i.operands[0].type == 2:
                 jmpaddress = i.operands[0].imm
                 if jmpaddress == address:
@@ -247,23 +249,29 @@ def liftblock(memdata, stack, context, stuff, addresstack, address, max_inst):
             if not(skip): #lord free us from this if!
                 # raise "end of the block, unknown jump"
                 # break
+                stuff.append((inst_address, i))
                 proccessed_i = "break"
 
         if proccessed_i == "break":
             print("break issued at %x" % (inst_address))
             break
+
         if proccessed_i == None:
             proccessed_i = i
 
         vproc(stack, context, i, address)
 
         stuff.append((inst_address, proccessed_i))
+
     return stuff
 
 
 def vproc(stack, context, i, address):
     proccessed_i = None
     #if esp is abstract, execution failed
+    if type(i) != capstone.CsInsn:
+        return proccessed_i
+
     if capstone.x86.X86_GRP_CALL in i.groups:
         if i.operands[0].type == 2:
             if i.operands[0].imm == address:
@@ -429,7 +437,8 @@ while True:
 def effects(f, context, stack):
     esp_diff = context[capstone.x86.X86_REG_ESP] - initial_stack_pos
     print("\t;esp diff: %x" % esp_diff, file=f)
-    print("\tadd esp, %d" % esp_diff, file=f)
+    if esp_diff != 0:
+        print("\tadd esp, %d" % esp_diff, file=f)
     #trim the stack changes above esp
     for i in stack:
         if i >= context[capstone.x86.X86_REG_ESP]:
@@ -440,6 +449,13 @@ def effects(f, context, stack):
 
     for reg in context:
         name = str(reg) if not(reg in reg_names) else reg_names[reg]
+        if reg == "flags":
+            continue
+        if reg == capstone.x86.X86_REG_ESP:
+            continue
+        if type(context[reg]) == InitialReg:
+            if context[reg].reg == reg:
+                continue
         print("\t" + name + " = " + value_desc(context[reg]), file=f)
 
 def compile_block(f, block):
